@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("HawkNet")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Hawk Authentication Protocol Implementation for .NET")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Pablo Cibraro")]
 [assembly: AssemblyProduct("HawkNet")]
 [assembly: AssemblyCopyright("Copyright ©  2012")]
 [assembly: AssemblyTrademark("")]

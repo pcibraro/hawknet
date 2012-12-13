@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Pablo Cibraro</authors>
+    <owners>Pablo Cibraro</owners>
+    <projectUrl>https://github.com/pcibraro/hawknet</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Hawk Http Authentication for ASP.NET Web API</description>
+    <copyright>Copyright 2012</copyright>
+    <tags>WebApi AspNet Auth Security Hawk</tags>
+  </metadata>
+</package>
