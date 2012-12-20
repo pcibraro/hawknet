@@ -8,8 +8,8 @@
     <owners>Pablo Cibraro</owners>
     <projectUrl>https://github.com/pcibraro/hawknet</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Hawk Http Authentication </description>
+    <description>Hawk Http Authentication for ASP.NET Web API</description>
     <copyright>Copyright 2012</copyright>
-    <tags>Auth Security Hawk</tags>
+    <tags>Auth Security Hawk WebAPI ASPNET</tags>
   </metadata>
 </package>
