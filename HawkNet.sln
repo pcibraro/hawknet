@@ -14,6 +14,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{842C06
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet.WebApi", "HawkNet.WebApi\HawkNet.WebApi.csproj", "{FCD8173A-2D39-4F10-A4DF-230B4B649DBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet.WebApi.Tests", "HawkNet.WebApi.Tests\HawkNet.WebApi.Tests.csproj", "{859478F0-4BAE-40A3-9FE6-2DCE60D1EA73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,14 @@ Global
 		{382359F1-1EC6-4E5F-BD37-38A46BA02A10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{382359F1-1EC6-4E5F-BD37-38A46BA02A10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{382359F1-1EC6-4E5F-BD37-38A46BA02A10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCD8173A-2D39-4F10-A4DF-230B4B649DBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCD8173A-2D39-4F10-A4DF-230B4B649DBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCD8173A-2D39-4F10-A4DF-230B4B649DBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCD8173A-2D39-4F10-A4DF-230B4B649DBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{859478F0-4BAE-40A3-9FE6-2DCE60D1EA73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{859478F0-4BAE-40A3-9FE6-2DCE60D1EA73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{859478F0-4BAE-40A3-9FE6-2DCE60D1EA73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{859478F0-4BAE-40A3-9FE6-2DCE60D1EA73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.SelfHost;
 using HawkNet;
+using HawkNet.WebApi;
 
 namespace Example
 {
@@ -26,7 +27,7 @@ namespace Example
 
             var handler = new HawkMessageHandler((id) =>
                 {
-                    return new HawkMessageHandler.HawkCredential
+                    return new HawkCredential
                     {
                         Id = id,
                         Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
@@ -42,7 +43,7 @@ namespace Example
                 server.OpenAsync().Wait();
                 Console.WriteLine("Press Enter to quit.");
 
-                var credential = new HawkClientMessageHandler.HawkCredential
+                var credential = new HawkCredential
                 {
                     Id = "dh37fgj492je",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
@@ -57,7 +58,15 @@ namespace Example
                 request.Headers.Host = "localhost";
 
                 var response = client.SendAsync(request).Result;
-                Console.WriteLine("Http Status Code {0}", response.StatusCode);
+                string message = response.Content.ReadAsStringAsync().Result;
+                Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
+
+                request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/Api/HelloWorldAnonymous");
+                request.Headers.Host = "localhost";
+
+                response = client.SendAsync(request).Result;
+                message = response.Content.ReadAsStringAsync().Result;
+                Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
 
                 Console.ReadLine();
             }
@@ -68,9 +77,19 @@ namespace Example
 
     public class HelloWorldController : ApiController
     {
+        [Authorize]
         public string Get()
         {
-            return "hello";
+            return "hello " + User.Identity.Name;
+        }
+    }
+
+    public class HelloWorldAnonymousController : ApiController
+    {
+        [AllowAnonymous]
+        public string Get()
+        {
+            return "hello anonymous";
         }
     }
 }

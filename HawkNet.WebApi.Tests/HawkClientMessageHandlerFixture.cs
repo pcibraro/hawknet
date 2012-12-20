@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HawkNet.WebApi;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HawkNet.Tests
@@ -18,7 +19,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(ArgumentException))]
         public void ShouldFailOnMissingCredentialId()
         {
-            var credential = new HawkClientMessageHandler.HawkCredential
+            var credential = new HawkCredential
             {
                 Algorithm = "hmacsha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
@@ -33,7 +34,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(ArgumentException))]
         public void ShouldFailOnMissingCredentialAlgorithm()
         {
-            var credential = new HawkClientMessageHandler.HawkCredential
+            var credential = new HawkCredential
             {
                 Id = "123",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
@@ -48,7 +49,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(ArgumentException))]
         public void ShouldFailOnMissingCredentialKey()
         {
-            var credential = new HawkClientMessageHandler.HawkCredential
+            var credential = new HawkCredential
             {
                 Id = "123",
                 Algorithm = "hmacsha256",
@@ -62,7 +63,7 @@ namespace HawkNet.Tests
         [TestMethod]
         public void ShouldGenerateAuthHeader()
         {
-            var credential = new HawkClientMessageHandler.HawkCredential
+            var credential = new HawkCredential
             {
                 Id = "123",
                 Algorithm = "hmacsha256",
@@ -70,7 +71,7 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
-            var ts = HawkClientMessageHandler.ConvertToUnixTimestamp(DateTime.UtcNow).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.UtcNow).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
                 credential, "hello", ts);
@@ -81,9 +82,10 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
             invoker.SendAsync(request, new CancellationToken());
 
-            var mac = HawkClientMessageHandler.CalculateMac(request, credential, ts, "hello");
-            
-            var parameter = string.Format("id = \"{0}\", ts = \"{1}\", mac = \"{2}\", ext = \"{3}\"",
+            var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri,
+                "hello", ts, credential);
+
+            var parameter = string.Format("id=\"{0}\", ts=\"{1}\", mac=\"{2}\", ext=\"{3}\"",
                 credential.Id, ts, mac, "hello");
 
             Assert.IsNotNull(request.Headers.Authorization);
@@ -101,14 +103,15 @@ namespace HawkNet.Tests
             var ts = "1353788437";
             var ext = "hello";
 
-            var credential = new HawkClientMessageHandler.HawkCredential
+            var credential = new HawkCredential
             {
                 Id = "123",
                 Algorithm = "hmacsha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
-            var mac = HawkClientMessageHandler.CalculateMac(request, credential, ts, ext);
+            var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri, 
+                ext, ts, credential);
 
             Assert.AreEqual("lDdDLlWQhgcxTvYgzzLo3EZExog=", mac);
         }
@@ -121,14 +124,15 @@ namespace HawkNet.Tests
 
             var ts = "1353788437";
 
-            var credential = new HawkClientMessageHandler.HawkCredential
+            var credential = new HawkCredential
             {
                 Id = "123",
                 Algorithm = "hmacsha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
-            var mac = HawkClientMessageHandler.CalculateMac(request, credential, ts, null);
+            var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
+                null, ts, credential);
 
             Assert.AreEqual("utHS0Jh4n7lwORuDl2Ht3MKHZPU=", mac);
         }

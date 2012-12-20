@@ -8,6 +8,8 @@ using System.Net.Http.Headers;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using HawkNet.WebApi;
 
 namespace HawkNet.Tests
 {
@@ -15,7 +17,7 @@ namespace HawkNet.Tests
     public class HawkMessageHandlerFixture
     {
         [TestMethod]
-        public void ShouldFailOnMissingAuthHeader()
+        public void ShouldSkipAuthOnMissingAuthHeader()
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), GetCredential);
             var invoker = new HttpMessageInvoker(handler);
@@ -24,13 +26,12 @@ namespace HawkNet.Tests
             var response = invoker.SendAsync(request, new CancellationToken())
                 .Result;
 
-            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
-            Assert.AreEqual("Missing Authorization header", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
+            Assert.IsNotNull(response);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         }
 
         [TestMethod]
-        public void ShouldFailOnWrongAuthScheme()
+        public void ShouldSkipAuthOnWrongAuthScheme()
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), GetCredential);
             var invoker = new HttpMessageInvoker(handler);
@@ -41,9 +42,8 @@ namespace HawkNet.Tests
             var response = invoker.SendAsync(request, new CancellationToken())
                 .Result;
 
-            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
-            Assert.AreEqual("Incorrect scheme", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
+            Assert.IsNotNull(response);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         }
 
         [TestMethod]
@@ -158,7 +158,7 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => 
             {
-                return new HawkMessageHandler.HawkCredential
+                return new HawkCredential
                     {
                         Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                         User = "steve"
@@ -184,7 +184,7 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkMessageHandler.HawkCredential
+                return new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmac-sha-0",
@@ -212,7 +212,7 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkMessageHandler.HawkCredential
+                return new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmacsha256",
@@ -236,52 +236,11 @@ namespace HawkNet.Tests
         }
 
         [TestMethod]
-        public void ShouldCalculateMac()
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Host = "example.com";
-
-            var attributes = new NameValueCollection() { 
-                { "ts", "1353788437" },
-                { "ext", "hello"}
-            };
-            var credential = new HawkMessageHandler.HawkCredential
-            {
-                Algorithm = "hmacsha1",
-                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-            };
-
-            var mac = HawkMessageHandler.CalculateMac(request, attributes, credential);
-
-            Assert.AreEqual("lDdDLlWQhgcxTvYgzzLo3EZExog=", mac);
-        }
-
-        [TestMethod]
-        public void ShouldCalculateMacWithMissingExt()
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Host = "example.com";
-
-            var attributes = new NameValueCollection() { 
-                { "ts", "1353788437" }
-            };
-            var credential = new HawkMessageHandler.HawkCredential
-            {
-                Algorithm = "hmacsha1",
-                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-            };
-
-            var mac = HawkMessageHandler.CalculateMac(request, attributes, credential);
-
-            Assert.AreEqual("utHS0Jh4n7lwORuDl2Ht3MKHZPU=", mac);
-        }
-
-        [TestMethod]
         public void ShouldParseValidAuthHeaderWithSha1()
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkMessageHandler.HawkCredential
+                return new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmacsha1",
@@ -300,7 +259,7 @@ namespace HawkNet.Tests
                 .Result;
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(HawkMessageHandler.HawkPrincipal));
+            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
         }
 
         [TestMethod]
@@ -308,7 +267,7 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkMessageHandler.HawkCredential
+                return new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmacsha256",
@@ -327,12 +286,12 @@ namespace HawkNet.Tests
                 .Result;
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(HawkMessageHandler.HawkPrincipal));
+            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
         }
 
-        private HawkMessageHandler.HawkCredential GetCredential(string id)
+        private HawkCredential GetCredential(string id)
         {
-            return new HawkMessageHandler.HawkCredential
+            return new HawkCredential
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
