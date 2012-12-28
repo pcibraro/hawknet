@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net.Http;
 using System.Security;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -13,14 +14,24 @@ namespace HawkNet
 {
     public static class Hawk
     {
-        readonly static string[] RequiredAttributes = { "id", "ts", "mac" };
+        readonly static string[] RequiredAttributes = { "id", "ts", "mac", "nonce" };
         readonly static string[] OptionalAttributes = { "ext" };
         readonly static string[] SupportedAttributes;
         readonly static string[] SupportedAlgorithms = { "HMACSHA1", "HMACSHA256" };
+        readonly static string RandomSource = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
         static Hawk()
         {
             SupportedAttributes = RequiredAttributes.Concat(OptionalAttributes).ToArray();
+        }
+
+        public static ClaimsPrincipal Authenticate(HttpRequestMessage request, Func<string, HawkCredential> credentials)
+        {
+            return Authenticate(request.Headers.Authorization.Parameter,
+                request.Headers.Host,
+                request.Method.ToString(),
+                request.RequestUri,
+                credentials);
         }
 
         public static ClaimsPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials)
@@ -73,7 +84,7 @@ namespace HawkNet
                 throw new SecurityException("Unknown algorithm");
             }
 
-            var mac = CalculateMac(host, method, uri, attributes["ext"], attributes["ts"], credential);
+            var mac = CalculateMac(host, method, uri, attributes["ext"], attributes["ts"], attributes["nonce"], credential);
             if (!mac.Equals(attributes["mac"]))
             {
                 throw new SecurityException("Bad mac");
@@ -89,25 +100,43 @@ namespace HawkNet
             return principal;
         }
 
-        public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null)
+        public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null, string nonce = null)
         {
-            if(string.IsNullOrEmpty(host))
+            if(string.IsNullOrWhiteSpace(host))
                 throw new ArgumentException("The host can not be null or empty", "host");
 
-            if (string.IsNullOrEmpty(method))
+            if (string.IsNullOrWhiteSpace(method))
                 throw new ArgumentException("The method can not be null or empty", "method");
 
             if(credential == null)
                 throw new ArgumentNullException("The credential can not be null", "credential");
 
+            if (string.IsNullOrWhiteSpace(nonce))
+            {
+                nonce = GetRandomString(6);
+            }
+
             var normalizedTs = ConvertToUnixTimestamp((ts.HasValue) ? ts.Value : DateTime.UtcNow).ToString();
 
-            var mac = CalculateMac(host, method, uri, ext, normalizedTs, credential);
+            var mac = CalculateMac(host, method, uri, ext, normalizedTs, nonce, credential);
 
-            var authParameter = string.Format("id=\"{0}\", ts=\"{1}\", mac=\"{2}\", ext=\"{3}\"",
-                credential.Id, ts, mac, ext);
+            var authParameter = string.Format("id=\"{0}\", ts=\"{1}\", nonce={2}, mac=\"{3}\", ext=\"{4}\"",
+                credential.Id, ts, nonce, mac, ext);
 
             return authParameter;
+        }
+
+        public static string GetRandomString(int size)
+        {
+            var result = new StringBuilder();
+            var random = new Random(RandomSource.Length); 
+            
+            for (var i = 0; i < size; ++i) 
+            {
+                result.Append(RandomSource[random.Next(RandomSource.Length)]);
+            }
+
+            return result.ToString();
         }
 
         public static NameValueCollection ParseAttributes(string authorization)
@@ -132,13 +161,14 @@ namespace HawkNet
             return allAttributes;
         }
 
-        public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, HawkCredential credential)
+        public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential)
         {
             var sanitizedHost = (host.IndexOf(':') > 0) ?
                 host.Substring(0, host.IndexOf(':')) :
                 host;
 
             var normalized = ts + "\n" +
+                     nonce + "\n" + 
                      method.ToUpper() + "\n" +
                      uri.PathAndQuery + "\n" +
                      host.ToLower() + "\n" +

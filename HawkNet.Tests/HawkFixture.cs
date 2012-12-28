@@ -12,7 +12,7 @@ namespace HawkNet.Tests
     [TestClass]
     public class HawkFixture
     {
-        const string ValidAuthorization = "id = \"123\", ts = \"1353788437\", mac = \"lDdDLlWQhgcxTvYgzzLo3EZExog=\", ext = \"hello\"";
+        const string ValidAuthorization = "id=\"123\", ts=\"1353788437\", nonce=\"k3j4h2\", mac=\"lDdDLlWQhgcxTvYgzzLo3EZExog=\", ext=\"hello\"";
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
@@ -53,7 +53,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(SecurityException), "Missing attributes")]
         public void ShouldFailAuthenticationOnMissingAuthAttribute()
         {
-            Hawk.Authenticate("ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"",
+            Hawk.Authenticate("ts=\"1353788437\", nonce=\"k3j4h2\", mac=\"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext=\"hello\"",
                 "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
         }
 
@@ -61,7 +61,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(SecurityException), "Missing attributes")]
         public void ShouldFailAuthenticationOnUnknownAuthAttribute()
         {
-            Hawk.Authenticate("id = \"123\", ts = \"1353788437\", x = \"3\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"",
+            Hawk.Authenticate("id=\"123\", ts=\"1353788437\", nonce=\"k3j4h2\", x=\"3\", mac=\"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext=\"hello\"",
                 "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
         }
 
@@ -109,7 +109,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(SecurityException), "Bad mac")]
         public void ShouldFailAuthenticationOnInvalidMac()
         {
-            var authorization = "id = \"123\", ts = \"1353788437\", mac = \"lDdDLlWQhgcxTvYgzzLo3EZExogXXXX=\", ext = \"hello\"";
+            var authorization = "id=\"123\", ts=\"1353788437\", nonce=\"k3j4h2\", mac=\"lDdDLlWQhgcxTvYgzzLo3EZExogXXXX=\", ext=\"hello\"";
             Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
         }
 
@@ -124,7 +124,7 @@ namespace HawkNet.Tests
                     User = "steve"
                 };
 
-            var authorization = "id = \"456\", ts = \"1353788437\", mac = \"lDdDLlWQhgcxTvYgzzLo3EZExog=\", ext = \"hello\"";
+            var authorization = "id=\"456\", ts=\"1353788437\", nonce=\"k3j4h2\", mac=\"qrP6b5tiS2CO330rpjUEym/USBM=\", ext=\"hello\"";
             var principal = Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), (s) => credential);
 
             Assert.IsNotNull(principal);
@@ -142,7 +142,7 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
-            var authorization = "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"";
+            var authorization = "id=\"456\", ts=\"1353788437\", nonce=\"k3j4h2\", mac=\"ZPa2zWC3WUAYXrwPzJ3DpF54xjQ2ZDLe8GF1ny6JJFI=\", ext=\"hello\"";
             var principal = Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), (s) => credential);
 
             Assert.IsNotNull(principal);
@@ -159,9 +159,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", 
-                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", credential);
+                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential);
 
-            Assert.AreEqual("lDdDLlWQhgcxTvYgzzLo3EZExog=", mac);
+            Assert.AreEqual("W2uv8gVKBomRuYSaTiIbhGvF8Ws=", mac);
         }
 
         [TestMethod]
@@ -174,9 +174,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
-                null, "1353788437", credential);
+                null, "1353788437", Hawk.GetRandomString(6), credential);
 
-            Assert.AreEqual("utHS0Jh4n7lwORuDl2Ht3MKHZPU=", mac);
+            Assert.AreEqual("OZL011pWkK+SfO70XhFGAuo9Sv0=", mac);
         }
 
         private HawkCredential GetCredential(string id)
