@@ -71,10 +71,12 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
+            var nonce = Hawk.GetRandomString(6);
+
             var ts = Hawk.ConvertToUnixTimestamp(DateTime.UtcNow).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
-                credential, "hello", ts);
+                credential, "hello", ts, nonce);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Host = "example.com";
@@ -83,10 +85,10 @@ namespace HawkNet.Tests
             invoker.SendAsync(request, new CancellationToken());
 
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri,
-                "hello", ts, credential);
+                "hello", ts, nonce, credential);
 
-            var parameter = string.Format("id=\"{0}\", ts=\"{1}\", mac=\"{2}\", ext=\"{3}\"",
-                credential.Id, ts, mac, "hello");
+            var parameter = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",
+                credential.Id, ts, nonce, mac, "hello");
 
             Assert.IsNotNull(request.Headers.Authorization);
             Assert.AreEqual("Hawk", request.Headers.Authorization.Scheme);
@@ -102,6 +104,7 @@ namespace HawkNet.Tests
 
             var ts = "1353788437";
             var ext = "hello";
+            var nonce = Hawk.GetRandomString(6);
 
             var credential = new HawkCredential
             {
@@ -111,9 +114,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri, 
-                ext, ts, credential);
+                ext, ts, nonce, credential);
 
-            Assert.AreEqual("lDdDLlWQhgcxTvYgzzLo3EZExog=", mac);
+            Assert.AreEqual("W2uv8gVKBomRuYSaTiIbhGvF8Ws=", mac);
         }
 
         [TestMethod]
@@ -123,6 +126,7 @@ namespace HawkNet.Tests
             request.Headers.Host = "example.com";
 
             var ts = "1353788437";
+            var nonce = Hawk.GetRandomString(6);
 
             var credential = new HawkCredential
             {
@@ -132,9 +136,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
-                null, ts, credential);
+                null, ts, nonce, credential);
 
-            Assert.AreEqual("utHS0Jh4n7lwORuDl2Ht3MKHZPU=", mac);
+            Assert.AreEqual("OZL011pWkK+SfO70XhFGAuo9Sv0=", mac);
         }
 
         class DummyHttpMessageHandler : HttpMessageHandler

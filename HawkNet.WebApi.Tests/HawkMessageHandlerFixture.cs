@@ -88,7 +88,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"123\", ts = \"1353788437\", x = \"3\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"123\", ts = \"1353788437\", nonce = \"1353788437\", x = \"3\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -122,9 +122,9 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => { throw new Exception("Invalid"); });
             var invoker = new HttpMessageInvoker(handler);
-
+            
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -142,7 +142,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -168,7 +168,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -196,7 +196,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -224,7 +224,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcU4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"k3j4h2\", mac = \"/qwS4UjfVWMcU4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -252,7 +252,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"lDdDLlWQhgcxTvYgzzLo3EZExog=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"j4h3g2\", mac = \"9JxRBh+WrWBkBP1jPtMaTl62bWg=\", ext = \"hello\"");
             request.Headers.Host = "example.com";
 
             var response = invoker.SendAsync(request, new CancellationToken())
@@ -279,7 +279,7 @@ namespace HawkNet.Tests
             var invoker = new HttpMessageInvoker(handler);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"1353788437\", nonce=\"j4h3g2\", mac = \"8WvAoX4WypNa8P/ep2G52EHHb6bAX8BSR2SO9+DPbHE=\", ext = \"hello\"");
             request.Headers.Host = "example.com";
 
             var response = invoker.SendAsync(request, new CancellationToken())
