@@ -12,6 +12,10 @@ using System.Web;
 
 namespace HawkNet
 {
+    /// <summary>
+    /// Hawk main class. It provides methods for generating a Hawk authorization header on the client side and authenticate it on the
+    /// service side.
+    /// </summary>
     public static class Hawk
     {
         readonly static string[] RequiredAttributes = { "id", "ts", "mac", "nonce" };
@@ -25,6 +29,12 @@ namespace HawkNet
             SupportedAttributes = RequiredAttributes.Concat(OptionalAttributes).ToArray();
         }
 
+        /// <summary>
+        /// Authenticates an upcoming request message
+        /// </summary>
+        /// <param name="request">Http request instance</param>
+        /// <param name="credentials">A method for searching across the available credentials</param>
+        /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
         public static ClaimsPrincipal Authenticate(HttpRequestMessage request, Func<string, HawkCredential> credentials)
         {
             return Authenticate(request.Headers.Authorization.Parameter,
@@ -34,6 +44,15 @@ namespace HawkNet
                 credentials);
         }
 
+        /// <summary>
+        /// Authenticates an upcoming request message
+        /// </summary>
+        /// <param name="authorization">Authorization header</param>
+        /// <param name="host">Host header</param>
+        /// <param name="method">Request method</param>
+        /// <param name="uri">Request Uri</param>
+        /// <param name="credentials">A method for searching across the available credentials</param>
+        /// <returns></returns>
         public static ClaimsPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials)
         {
             if (string.IsNullOrWhiteSpace(authorization))
@@ -100,6 +119,17 @@ namespace HawkNet
             return principal;
         }
 
+        /// <summary>
+        /// Creates a new Hawk Authorization header based on the provided parameters
+        /// </summary>
+        /// <param name="host">Host header</param>
+        /// <param name="method">Request method</param>
+        /// <param name="uri">Request uri</param>
+        /// <param name="credential">Credential used to calculate the MAC</param>
+        /// <param name="ext">Optional extension attribute</param>
+        /// <param name="ts">Timestamp</param>
+        /// <param name="nonce">Random Nonce</param>
+        /// <returns>Hawk authorization header</returns>
         public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null, string nonce = null)
         {
             if(string.IsNullOrWhiteSpace(host))
@@ -126,6 +156,11 @@ namespace HawkNet
             return authParameter;
         }
 
+        /// <summary>
+        /// Gets a random string of a given size
+        /// </summary>
+        /// <param name="size">Expected size for the generated string</param>
+        /// <returns>Random string</returns>
         public static string GetRandomString(int size)
         {
             var result = new StringBuilder();
@@ -139,6 +174,11 @@ namespace HawkNet
             return result.ToString();
         }
 
+        /// <summary>
+        /// Parse all the attributes present in the Hawk authorization header
+        /// </summary>
+        /// <param name="authorization">Authorization header</param>
+        /// <returns>List of parsed attributes</returns>
         public static NameValueCollection ParseAttributes(string authorization)
         {
             var allAttributes = new NameValueCollection();
@@ -161,6 +201,17 @@ namespace HawkNet
             return allAttributes;
         }
 
+        /// <summary>
+        /// Computes a mac following the Hawk rules
+        /// </summary>
+        /// <param name="host">Host header</param>
+        /// <param name="method">Request method</param>
+        /// <param name="uri">Request uri</param>
+        /// <param name="ext">Extesion attribute</param>
+        /// <param name="ts">Timestamp</param>
+        /// <param name="nonce">Nonce</param>
+        /// <param name="credential">Credential</param>
+        /// <returns>Generated mac</returns>
         public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential)
         {
             var sanitizedHost = (host.IndexOf(':') > 0) ?
@@ -186,6 +237,11 @@ namespace HawkNet
             return Convert.ToBase64String(mac);
         }
 
+        /// <summary>
+        /// Converts a Datatime to an equivalent Unix Timestamp
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
         public static double ConvertToUnixTimestamp(DateTime date)
         {
             var origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
