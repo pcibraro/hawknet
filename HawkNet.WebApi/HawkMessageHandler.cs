@@ -49,20 +49,26 @@ namespace HawkNet.WebApi
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
-            if (request.Headers.Authorization == null ||
+            if (request.Headers.Authorization != null &&
                 !string.Equals(request.Headers.Authorization.Scheme, Scheme))
             {
                 return base.SendAsync(request, cancellationToken);
             }
 
+            if (request.Headers.Authorization == null ||
+                string.IsNullOrWhiteSpace(request.Headers.Authorization.Scheme))
+            {
+                return ChallengeResponse(request);
+            }
+
             if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
             {
-                return Unauthorized(request, "Invalid header format");
+                return ToResponse(request, HttpStatusCode.BadRequest, "Invalid header format");
             }
 
             if (string.IsNullOrWhiteSpace(request.Headers.Host))
             {
-                return Unauthorized(request, "Missing Host header");
+                return ToResponse(request, HttpStatusCode.BadRequest, "Missing Host header");
             }
             
             IPrincipal principal = null;
@@ -74,7 +80,7 @@ namespace HawkNet.WebApi
             }
             catch(SecurityException ex)
             {
-                return Unauthorized(request, ex.Message);
+                return ToResponse(request, HttpStatusCode.Unauthorized, ex.Message);
             }
             
             Thread.CurrentPrincipal = principal;
@@ -86,14 +92,29 @@ namespace HawkNet.WebApi
             return base.SendAsync(request, cancellationToken);
         }
 
-        private static Task<HttpResponseMessage> Unauthorized(HttpRequestMessage request, string message)
+        private static Task<HttpResponseMessage> ChallengeResponse(HttpRequestMessage request)
         {
             var tsc = new TaskCompletionSource<HttpResponseMessage>();
-            
-            var response = request.CreateResponse(HttpStatusCode.Unauthorized);
-            response.ReasonPhrase = message;
-            response.Headers.WwwAuthenticate.Add(new AuthenticationHeaderValue(Scheme, "error='" + message + "'"));
 
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
+            var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
+                ts, "pool.ntp.org");
+
+            var response = request.CreateResponse(HttpStatusCode.Unauthorized);
+            response.Headers.WwwAuthenticate.Add(new AuthenticationHeaderValue(Scheme, challenge));
+
+            tsc.SetResult(response);
+
+            return tsc.Task;
+        }
+
+        private static Task<HttpResponseMessage> ToResponse(HttpRequestMessage request, HttpStatusCode code, string message)
+        {
+            var tsc = new TaskCompletionSource<HttpResponseMessage>();
+
+            var response = request.CreateResponse(code);
+            response.ReasonPhrase = message;
+            
             tsc.SetResult(response);
 
             return tsc.Task;

@@ -17,20 +17,6 @@ namespace HawkNet.Tests
     public class HawkMessageHandlerFixture
     {
         [TestMethod]
-        public void ShouldSkipAuthOnMissingAuthHeader()
-        {
-            var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), GetCredential);
-            var invoker = new HttpMessageInvoker(handler);
-            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-
-            var response = invoker.SendAsync(request, new CancellationToken())
-                .Result;
-
-            Assert.IsNotNull(response);
-            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [TestMethod]
         public void ShouldSkipAuthOnWrongAuthScheme()
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), GetCredential);
@@ -58,9 +44,8 @@ namespace HawkNet.Tests
             var response = invoker.SendAsync(request, new CancellationToken())
                 .Result;
 
-            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
             Assert.AreEqual("Missing Host header", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -78,7 +63,6 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Missing attributes", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -96,7 +80,6 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Unknown attributes", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -112,9 +95,8 @@ namespace HawkNet.Tests
             var response = invoker.SendAsync(request, new CancellationToken())
                 .Result;
 
-            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
             Assert.AreEqual("Invalid header format", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -132,7 +114,6 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Unknown user", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -150,7 +131,6 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Missing credentials", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -176,7 +156,6 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Invalid credentials", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -204,7 +183,6 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Unknown algorithm", response.ReasonPhrase);
-            Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
         [TestMethod]
@@ -232,6 +210,31 @@ namespace HawkNet.Tests
 
             Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.AreEqual("Bad mac", response.ReasonPhrase);
+        }
+
+        [TestMethod]
+        public void ShouldReturnChallengeOnEmptyAuthHeader()
+        {
+            var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
+            {
+                return new HawkCredential
+                {
+                    Id = "123",
+                    Algorithm = "hmac-sha-0",
+                    Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                    User = "steve"
+                };
+            });
+
+            var invoker = new HttpMessageInvoker(handler);
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
+            request.Headers.Host = "localhost";
+
+            var response = invoker.SendAsync(request, new CancellationToken())
+                .Result;
+
+            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
             Assert.IsTrue(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
         }
 
