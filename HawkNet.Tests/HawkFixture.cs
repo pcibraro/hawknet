@@ -125,7 +125,7 @@ namespace HawkNet.Tests
                 };
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
-            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
                 ts, mac);
@@ -148,7 +148,7 @@ namespace HawkNet.Tests
             };
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
-            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
                 ts, mac);
@@ -177,7 +177,7 @@ namespace HawkNet.Tests
             var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
             
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
-            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, hash);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header", hash);
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\", hash=\"{2}\"",
                 ts, mac, hash);
@@ -202,7 +202,7 @@ namespace HawkNet.Tests
             };
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now.Subtract(TimeSpan.FromDays(1))) / 1000);
-            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
                 ts, mac);
@@ -223,7 +223,7 @@ namespace HawkNet.Tests
             };
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now.Add(TimeSpan.FromDays(1))) / 1000);
-            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
                 ts, mac);
@@ -241,7 +241,7 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", 
-                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential);
+                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential, "header");
 
             Assert.AreEqual("zsj33M9aSXrxqlD1qs1haK/IBoQ=", mac);
         }
@@ -261,7 +261,7 @@ namespace HawkNet.Tests
             var hash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes("Thank you for flying Hawk")));
 
             var mac = Hawk.CalculateMac("example.com", "Get",
-                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential, hash);
+                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential, "header", hash);
 
             Assert.AreEqual("zsDVOQK4cEPBaj6VOuGQF4nh30w=", mac);
         }
@@ -276,9 +276,49 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
-                null, "1353788437", Hawk.GetRandomString(6), credential);
+                null, "1353788437", Hawk.GetRandomString(6), credential, "header");
 
             Assert.AreEqual("njcQeYbHor0gwJGoH3+ktSQ7nqs=", mac);
+        }
+
+        [TestMethod]
+        public void ShouldGetBewit()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "hmacsha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?filter=a"), credential,
+                200, "hello");
+
+            var parts = Encoding.UTF8.GetString(Convert.FromBase64String(bewit)).Split('\\');
+
+            Assert.AreEqual(4, parts.Length);
+            Assert.AreEqual(credential.Id, parts[0]);
+            Assert.AreEqual("hello", parts[3]);
+        }
+
+        [TestMethod]
+        public void ShouldAuthenticateBewit()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "hmacsha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?filter=a"), credential,
+                200, "hello");
+
+            var claims = Hawk.AuthenticateBewit(bewit, "example.com", new Uri("http://example.com:8080/resource/4?filter=a&bewit=" + bewit),
+                s => credential);
+
+            Assert.IsNotNull(claims);
+            Assert.IsInstanceOfType(claims, typeof(ClaimsPrincipal));
         }
 
         private HawkCredential GetCredential(string id)

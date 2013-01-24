@@ -39,6 +39,19 @@ namespace HawkNet
         /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
         public static ClaimsPrincipal Authenticate(HttpRequestMessage request, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
+            if (request.Method == HttpMethod.Get &&
+                !string.IsNullOrEmpty(request.RequestUri.Query))
+            {
+                var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
+                if(query["bewit"] != null)
+                {
+                    return AuthenticateBewit(query["bewit"],
+                        request.Headers.Host,
+                        request.RequestUri,
+                        credentials);
+                }
+            }
+            
             var requestPayload = new Lazy<byte[]>(() =>
             {
                 var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
@@ -136,7 +149,7 @@ namespace HawkNet
                 }
             }
 
-            var mac = CalculateMac(host, method, uri, attributes["ext"], attributes["ts"], attributes["nonce"], credential, attributes["hash"]);
+            var mac = CalculateMac(host, method, uri, attributes["ext"], attributes["ts"], attributes["nonce"], credential, "header", attributes["hash"]);
             if (!mac.Equals(attributes["mac"]))
             {
                 throw new SecurityException("Bad mac");
@@ -196,6 +209,96 @@ namespace HawkNet
         }
 
         /// <summary>
+        /// Gets a new Bewit for Single URI authorization 
+        /// </summary>
+        /// <param name="host">Host name</param>
+        /// <param name="uri">Request uri</param>
+        /// <param name="credential">Hawk credential</param>
+        /// <param name="ttlSec">Time to live in seconds for the Bewit</param>
+        /// <param name="ext">Extension attributes</param>
+        /// <returns>A fresh Bewit</returns>
+        public static string GetBewit(string host, Uri uri, HawkCredential credential, int ttlSec, string ext = null)
+        {
+            var now = ConvertToUnixTimestamp(DateTime.Now);
+
+            var expiration = Math.Floor(now / 1000) + ttlSec;
+
+            var mac = CalculateMac(host, "GET", uri, ext, expiration.ToString(), "", credential, "bewit");
+
+            var bewit = Convert.ToBase64String(
+                Encoding.UTF8.GetBytes(credential.Id + '\\' + expiration + '\\' + mac + '\\' + ext));
+
+            return bewit;
+        }
+
+        public static ClaimsPrincipal AuthenticateBewit(string bewit, string host, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
+        {
+            var decodedBewit = Encoding.UTF8.GetString(Convert.FromBase64String(bewit));
+
+            var bewitParts = decodedBewit.Split('\\');
+            if (bewitParts.Length != 4) 
+            {
+                throw new SecurityException("Invalid bewit structure");
+            }
+
+            double expiration;
+            if(!double.TryParse(bewitParts[1], out expiration))
+            {
+                throw new SecurityException("Invalid expiration in bewit structure");
+            }
+
+            var now = ConvertToUnixTimestamp(DateTime.Now);
+
+            if (expiration * 1000 <= now) 
+            {
+                throw new SecurityException("Access expired");
+            }
+
+            HawkCredential credential = null;
+            try
+            {
+                credential = credentials(bewitParts[0]);
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityException("Unknown user", ex);
+            }
+
+            if (credential == null)
+            {
+                throw new SecurityException("Missing credentials");
+            }
+
+            if (string.IsNullOrWhiteSpace(credential.Algorithm) ||
+                string.IsNullOrWhiteSpace(credential.Key))
+            {
+                throw new SecurityException("Invalid credentials");
+            }
+
+            if (!SupportedAlgorithms.Any(a => string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                throw new SecurityException("Unknown algorithm");
+            }
+
+            var mac = CalculateMac(uri.Host, "GET", RemoveBewitFromQuery(uri), 
+                bewitParts[3], bewitParts[1], "", credential, "bewit");
+
+            if (!mac.Equals(bewitParts[2]))
+            {
+                throw new SecurityException("Bad mac");
+            }
+
+            var userClaim = new Claim(ClaimTypes.Name, (credential.User != null) ? credential.User : "");
+            var allClaims = Enumerable.Concat(new Claim[] { userClaim },
+                (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
+
+            var identity = new ClaimsIdentity(allClaims, "Hawk");
+            var principal = new ClaimsPrincipal(new ClaimsIdentity[] { identity });
+
+            return principal;
+        }
+
+        /// <summary>
         /// Gets a random string of a given size
         /// </summary>
         /// <param name="size">Expected size for the generated string</param>
@@ -252,7 +355,7 @@ namespace HawkNet
         /// <param name="credential">Credential</param>
         /// <param name="payload">Hash of the request payload</param>
         /// <returns>Generated mac</returns>
-        public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential, string payloadHash = null)
+        public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential, string type, string payloadHash = null)
         {
             var hmac = HMAC.Create(credential.Algorithm);
             hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
@@ -261,7 +364,7 @@ namespace HawkNet
                 host.Substring(0, host.IndexOf(':')) :
                 host;
 
-            var normalized = "hawk.1.header\n" + 
+            var normalized = "hawk.1." + type + "\n" + 
                         ts + "\n" +
                         nonce + "\n" + 
                         method.ToUpper() + "\n" +
@@ -310,6 +413,21 @@ namespace HawkNet
             
             return false;
             
+        }
+
+        private static Uri RemoveBewitFromQuery(Uri uri)
+        {
+            var parsedQueryString = HttpUtility.ParseQueryString(uri.Query);
+            parsedQueryString.Remove("bewit");
+
+            var resultingQuery = string.Join("&", parsedQueryString.Cast<string>().Select(e => e + "=" + parsedQueryString[e]));
+
+            return new Uri(string.Format("{0}://{1}:{2}{3}?{4}",
+                uri.Scheme,
+                uri.Host,
+                uri.Port,
+                uri.AbsolutePath,
+                resultingQuery));
         }
     }
 }
