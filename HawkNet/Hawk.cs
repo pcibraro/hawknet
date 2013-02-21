@@ -139,6 +139,7 @@ namespace HawkNet
             if (!string.IsNullOrWhiteSpace(attributes["hash"]))
             {
                 var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+                
                 hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
 
                 var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload.Value));
@@ -193,12 +194,12 @@ namespace HawkNet
                 nonce = GetRandomString(6);
             }
 
-            var normalizedTs = ConvertToUnixTimestamp((ts.HasValue) ? ts.Value : DateTime.UtcNow).ToString();
+            var normalizedTs = (ConvertToUnixTimestamp((ts.HasValue) ? ts.Value : DateTime.UtcNow) / 1000).ToString();
 
-            var mac = CalculateMac(host, method, uri, ext, normalizedTs, nonce, credential, payloadHash);
+            var mac = CalculateMac(host, method, uri, ext, normalizedTs, nonce, credential, "header", payloadHash);
 
             var authorization = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",
-                    credential.Id, ts, nonce, mac, ext);
+                    credential.Id, normalizedTs, nonce, mac, ext);
 
             if (!string.IsNullOrWhiteSpace(payloadHash))
             {
