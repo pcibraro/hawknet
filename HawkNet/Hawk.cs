@@ -203,7 +203,7 @@ namespace HawkNet
 
             if (!string.IsNullOrWhiteSpace(payloadHash))
             {
-                authorization += string.Format("hash=\"{0}\"", payloadHash);
+                authorization += string.Format(", hash=\"{0}\"", payloadHash);
             }
 
             return authorization;
