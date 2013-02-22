@@ -14,10 +14,11 @@ namespace HawkNet.WebApi
     {
         HawkCredential credential;
         string ext;
-        string ts;
+        DateTime? ts;
         string nonce;
+        bool includePayloadHash;
 
-        public HawkClientMessageHandler(HttpMessageHandler innerHandler, HawkCredential credential, string ext = "", string ts = null, string nonce = null)
+        public HawkClientMessageHandler(HttpMessageHandler innerHandler, HawkCredential credential, string ext = "", DateTime? ts = null, string nonce = null, bool includePayloadHash = false)
             : base(innerHandler)
         {
             if (string.IsNullOrEmpty(credential.Id) ||
@@ -31,23 +32,36 @@ namespace HawkNet.WebApi
             this.ext = ext;
             this.ts = ts;
             this.nonce = nonce;
+            this.includePayloadHash = includePayloadHash;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(ts))
-                ts = Hawk.ConvertToUnixTimestamp(DateTime.UtcNow).ToString();
+            string payloadHash = null;
 
-            if(string.IsNullOrWhiteSpace(nonce))
-                nonce = Hawk.GetRandomString(6);
+            if (this.includePayloadHash &&
+                request.Method != HttpMethod.Get &&
+                request.Content != null)
+            {
+                var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+                hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
 
-            var mac = Hawk.CalculateMac(request.Headers.Host, 
-                request.Method.ToString(), request.RequestUri, ext, ts, nonce, credential);
+                var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                var payload = task.GetAwaiter().GetResult();
 
-            var authParameter = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",
-                credential.Id, ts, nonce, mac, ext);
+                payloadHash = Convert.ToBase64String(hmac.ComputeHash(payload));
+            }
+            
+            var auth = Hawk.GetAuthorizationHeader(request.Headers.Host,
+                request.Method.ToString(),
+                request.RequestUri,
+                credential,
+                this.ext,
+                this.ts,
+                this.nonce,
+                payloadHash);
 
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", authParameter);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", auth);
 
             return base.SendAsync(request, cancellationToken);
         }

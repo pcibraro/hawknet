@@ -73,10 +73,11 @@ namespace HawkNet.Tests
 
             var nonce = Hawk.GetRandomString(6);
 
-            var ts = Hawk.ConvertToUnixTimestamp(DateTime.UtcNow).ToString();
+            var date = DateTime.UtcNow;
+            var ts = (Hawk.ConvertToUnixTimestamp(date) / 1000).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
-                credential, "hello", ts, nonce);
+                credential, "hello", date, nonce);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Host = "example.com";
@@ -85,10 +86,55 @@ namespace HawkNet.Tests
             invoker.SendAsync(request, new CancellationToken());
 
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri,
-                "hello", ts, nonce, credential);
+                "hello", ts, nonce, credential, "header");
 
             var parameter = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",
                 credential.Id, ts, nonce, mac, "hello");
+
+            Assert.IsNotNull(request.Headers.Authorization);
+            Assert.AreEqual("Hawk", request.Headers.Authorization.Scheme);
+            Assert.AreEqual(parameter,
+                request.Headers.Authorization.Parameter);
+        }
+
+        [TestMethod]
+        public void ShouldGenerateAuthHeaderWithPayloadHash()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "hmacsha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var payload = "foo";
+
+            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+            hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
+
+            var payloadHash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)));
+
+            var nonce = Hawk.GetRandomString(6);
+
+            var date = DateTime.UtcNow;
+            var ts = (Hawk.ConvertToUnixTimestamp(date) / 1000).ToString();
+
+            var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
+                credential, "hello", date, nonce, true);
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com:8080/resource/4?filter=a");
+            request.Headers.Host = "example.com";
+            request.Content = new StringContent(payload);
+
+            var invoker = new HttpMessageInvoker(handler);
+            var response = invoker.SendAsync(request, new CancellationToken());
+
+            var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri,
+                "hello", ts, nonce, credential, "header", payloadHash);
+
+            var parameter = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\", hash=\"{5}\"",
+                credential.Id, ts, nonce, mac, "hello", payloadHash);
 
             Assert.IsNotNull(request.Headers.Authorization);
             Assert.AreEqual("Hawk", request.Headers.Authorization.Scheme);
@@ -114,9 +160,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri, 
-                ext, ts, nonce, credential);
+                ext, ts, nonce, credential, "header");
 
-            Assert.AreEqual("W2uv8gVKBomRuYSaTiIbhGvF8Ws=", mac);
+            Assert.AreEqual("zsj33M9aSXrxqlD1qs1haK/IBoQ=", mac);
         }
 
         [TestMethod]
@@ -136,10 +182,12 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
-                null, ts, nonce, credential);
+                null, ts, nonce, credential, "header");
 
-            Assert.AreEqual("OZL011pWkK+SfO70XhFGAuo9Sv0=", mac);
+            Assert.AreEqual("njcQeYbHor0gwJGoH3+ktSQ7nqs=", mac);
         }
+
+        
 
         class DummyHttpMessageHandler : HttpMessageHandler
         {

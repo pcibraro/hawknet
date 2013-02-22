@@ -49,6 +49,35 @@ namespace HawkNet.WebApi
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
+            IPrincipal principal = null;
+
+            if (request.Method == HttpMethod.Get &&
+                request.RequestUri != null &&
+                !string.IsNullOrEmpty(request.RequestUri.Query))
+            {
+                var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
+                if (query["bewit"] != null)
+                {
+                    try
+                    {
+                        principal = Hawk.Authenticate(request, credentials);
+
+                    }
+                    catch (SecurityException ex)
+                    {
+                        return ToResponse(request, HttpStatusCode.Unauthorized, ex.Message);
+                    }
+
+                    Thread.CurrentPrincipal = principal;
+                    if (HttpContext.Current != null)
+                    {
+                        HttpContext.Current.User = principal;
+                    }
+
+                    return base.SendAsync(request, cancellationToken);
+                }
+            }
+            
             if (request.Headers.Authorization != null &&
                 !string.Equals(request.Headers.Authorization.Scheme, Scheme))
             {
@@ -70,19 +99,17 @@ namespace HawkNet.WebApi
             {
                 return ToResponse(request, HttpStatusCode.BadRequest, "Missing Host header");
             }
-            
-            IPrincipal principal = null;
+
             try
             {
-                principal = Hawk.Authenticate(request.Headers.Authorization.Parameter, request.Headers.Host,
-                        request.Method.ToString(), request.RequestUri, credentials);
-            
+                principal = Hawk.Authenticate(request, credentials);
+
             }
-            catch(SecurityException ex)
+            catch (SecurityException ex)
             {
                 return ToResponse(request, HttpStatusCode.Unauthorized, ex.Message);
             }
-            
+
             Thread.CurrentPrincipal = principal;
             if (HttpContext.Current != null)
             {
@@ -90,6 +117,7 @@ namespace HawkNet.WebApi
             }
 
             return base.SendAsync(request, cancellationToken);
+            
         }
 
         private static Task<HttpResponseMessage> ChallengeResponse(HttpRequestMessage request)
