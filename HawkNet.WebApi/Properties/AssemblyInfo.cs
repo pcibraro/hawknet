@@ -34,3 +34,7 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.1.2")]
 [assembly: AssemblyFileVersion("1.0.1.2")]
+
+//#if SIGNED
+//[assembly: AssemblyKeyFileAttribute("..\\hawk.snk")]
+//#endif
