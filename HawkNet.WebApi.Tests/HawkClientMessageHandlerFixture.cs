@@ -80,7 +80,6 @@ namespace HawkNet.Tests
                 credential, "hello", date, nonce);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Host = "example.com";
 
             var invoker = new HttpMessageInvoker(handler);
             invoker.SendAsync(request, new CancellationToken());
@@ -124,7 +123,6 @@ namespace HawkNet.Tests
                 credential, "hello", date, nonce, true);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Host = "example.com";
             request.Content = new StringContent(payload);
 
             var invoker = new HttpMessageInvoker(handler);
@@ -169,7 +167,6 @@ namespace HawkNet.Tests
         public void ShouldCalculateMacWithMissingExt()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
-            request.Headers.Host = "example.com";
 
             var ts = "1353788437";
             var nonce = Hawk.GetRandomString(6);

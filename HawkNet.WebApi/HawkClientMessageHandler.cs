@@ -51,6 +51,8 @@ namespace HawkNet.WebApi
 
                 payloadHash = Convert.ToBase64String(hmac.ComputeHash(payload));
             }
+
+            request.Headers.Host = request.RequestUri.Host;
             
             var auth = Hawk.GetAuthorizationHeader(request.Headers.Host,
                 request.Method.ToString(),
