@@ -44,10 +44,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HawkNet, Version=1.1.0.2, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\HawkNet.1.1.0.2\lib\net45\HawkNet.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
       <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
@@ -94,6 +90,10 @@
     <ProjectReference Include="..\HawkNet.WebApi\HawkNet.WebApi.csproj">
       <Project>{fcd8173a-2d39-4f10-a4df-230b4b649dbb}</Project>
       <Name>HawkNet.WebApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\HawkNet\HawkNet.csproj">
+      <Project>{f997ce59-eee3-42e4-b41a-b32985994603}</Project>
+      <Name>HawkNet</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
