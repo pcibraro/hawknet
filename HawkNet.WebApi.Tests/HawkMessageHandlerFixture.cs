@@ -223,9 +223,35 @@ namespace HawkNet.Tests
         }
 
         [TestMethod]
-        public void ShouldReturnChallengeOnEmptyAuthHeader()
+        public void ShouldNotReturnChallengeOnEmptyAuthHeaderWithStatusOk()
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
+            {
+                return new HawkCredential
+                {
+                    Id = "123",
+                    Algorithm = "hmac-sha-0",
+                    Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                    User = "steve"
+                };
+            });
+
+            var invoker = new HttpMessageInvoker(handler);
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
+            request.Headers.Host = "localhost";
+
+            var response = invoker.SendAsync(request, new CancellationToken())
+                .Result;
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.IsFalse(response.Headers.WwwAuthenticate.Any(h => h.Scheme == "Hawk"));
+        }
+
+        [TestMethod]
+        public void ShouldReturnChallengeOnEmptyAuthHeaderWithStatusUnauthorized()
+        {
+            var handler = new HawkMessageHandler(new DummyHttpMessageHandler(HttpStatusCode.Unauthorized), (id) =>
             {
                 return new HawkCredential
                 {
@@ -329,10 +355,17 @@ namespace HawkNet.Tests
 
         class DummyHttpMessageHandler : HttpMessageHandler
         {
+            HttpStatusCode statusCode;
+
+            public DummyHttpMessageHandler(HttpStatusCode code = HttpStatusCode.OK)
+            {
+                this.statusCode = code;
+            }
+
             protected override System.Threading.Tasks.Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var tsc = new TaskCompletionSource<HttpResponseMessage>();
-                tsc.SetResult(new HttpResponseMessage(HttpStatusCode.OK));
+                tsc.SetResult(new HttpResponseMessage(statusCode));
 
                 return tsc.Task;
             }

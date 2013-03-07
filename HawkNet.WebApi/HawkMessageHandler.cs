@@ -87,42 +87,52 @@ namespace HawkNet.WebApi
             if (request.Headers.Authorization == null ||
                 string.IsNullOrWhiteSpace(request.Headers.Authorization.Scheme))
             {
-                return ChallengeResponse(request);
-            }
+                return base.SendAsync(request, cancellationToken).ContinueWith<HttpResponseMessage>(r =>
+                    {
+                        if (r.Result.StatusCode == HttpStatusCode.Unauthorized)
+                        {
+                            return ChallengeResponse(request);
+                        }
 
-            if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
+                        return r.Result;
+                    });
+            }
+            else
             {
-                return ToResponse(request, HttpStatusCode.BadRequest, "Invalid header format");
-            }
 
-            if (string.IsNullOrWhiteSpace(request.Headers.Host))
-            {
-                return ToResponse(request, HttpStatusCode.BadRequest, "Missing Host header");
-            }
+                if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
+                {
+                    return ToResponse(request, HttpStatusCode.BadRequest, "Invalid header format");
+                }
 
-            try
-            {
-                principal = Hawk.Authenticate(request, credentials);
+                if (string.IsNullOrWhiteSpace(request.Headers.Host))
+                {
+                    return ToResponse(request, HttpStatusCode.BadRequest, "Missing Host header");
+                }
 
-            }
-            catch (SecurityException ex)
-            {
-                return ToResponse(request, HttpStatusCode.Unauthorized, ex.Message);
-            }
+                try
+                {
+                    principal = Hawk.Authenticate(request, credentials);
 
-            Thread.CurrentPrincipal = principal;
-            if (HttpContext.Current != null)
-            {
-                HttpContext.Current.User = principal;
-            }
+                }
+                catch (SecurityException ex)
+                {
+                    return ToResponse(request, HttpStatusCode.Unauthorized, ex.Message);
+                }
 
-            return base.SendAsync(request, cancellationToken);
-            
+                Thread.CurrentPrincipal = principal;
+                if (HttpContext.Current != null)
+                {
+                    HttpContext.Current.User = principal;
+                }
+
+                return base.SendAsync(request, cancellationToken);
+            }
         }
 
-        private static Task<HttpResponseMessage> ChallengeResponse(HttpRequestMessage request)
+        private static HttpResponseMessage ChallengeResponse(HttpRequestMessage request)
         {
-            var tsc = new TaskCompletionSource<HttpResponseMessage>();
+            //var tsc = new TaskCompletionSource<HttpResponseMessage>();
 
             var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
             var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
@@ -131,9 +141,11 @@ namespace HawkNet.WebApi
             var response = request.CreateResponse(HttpStatusCode.Unauthorized);
             response.Headers.WwwAuthenticate.Add(new AuthenticationHeaderValue(Scheme, challenge));
 
-            tsc.SetResult(response);
+            return response;
 
-            return tsc.Task;
+            //tsc.SetResult(response);
+
+            //return tsc.Task;
         }
 
         private static Task<HttpResponseMessage> ToResponse(HttpRequestMessage request, HttpStatusCode code, string message)
