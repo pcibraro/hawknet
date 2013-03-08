@@ -423,12 +423,18 @@ namespace HawkNet
 
             var resultingQuery = string.Join("&", parsedQueryString.Cast<string>().Select(e => e + "=" + parsedQueryString[e]));
 
-            return new Uri(string.Format("{0}://{1}:{2}{3}?{4}",
+            var newUri = string.Format("{0}://{1}:{2}{3}",
                 uri.Scheme,
                 uri.Host,
                 uri.Port,
-                uri.AbsolutePath,
-                resultingQuery));
+                uri.AbsolutePath);
+
+            if (!string.IsNullOrEmpty(resultingQuery))
+            {
+                newUri += "?" + resultingQuery;
+            }
+
+            return new Uri(newUri);
         }
     }
 }
