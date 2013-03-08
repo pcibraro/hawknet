@@ -132,8 +132,6 @@ namespace HawkNet.WebApi
 
         private static HttpResponseMessage ChallengeResponse(HttpRequestMessage request)
         {
-            //var tsc = new TaskCompletionSource<HttpResponseMessage>();
-
             var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
             var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
                 ts, "pool.ntp.org");
@@ -142,10 +140,6 @@ namespace HawkNet.WebApi
             response.Headers.WwwAuthenticate.Add(new AuthenticationHeaderValue(Scheme, challenge));
 
             return response;
-
-            //tsc.SetResult(response);
-
-            //return tsc.Task;
         }
 
         private static Task<HttpResponseMessage> ToResponse(HttpRequestMessage request, HttpStatusCode code, string message)
