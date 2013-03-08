@@ -70,8 +70,22 @@ namespace Example
                 message = response.Content.ReadAsStringAsync().Result;
                 Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
 
+                var client3 = new HttpClient();
+
+                var bewit = Hawk.GetBewit("localhost", new Uri("http://localhost:8091/Api/HelloWorld"), credential, 60000);
+
+                request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/Api/HelloWorld?bewit=" + bewit);
+                request.Headers.Host = "localhost";
+
+                response = client3.SendAsync(request).Result;
+                
+                message = response.Content.ReadAsStringAsync().Result;
+                Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
+
                 Console.WriteLine("Press a key to close the app");
                 Console.ReadLine();
+
+
             }
 
         }
