@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#if NET45
+using System.Security.Claims;
+using System.Threading.Tasks;
+#endif
 
 namespace HawkNet.Tests
 {
@@ -25,7 +28,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(ArgumentException))]
         public void ShouldFailAuthenticationOnEmptyAuthorization()
         {
-            Hawk.Authenticate(" ", "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
+            Hawk.Authenticate("", "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
         }
 
         [TestMethod]
@@ -39,7 +42,7 @@ namespace HawkNet.Tests
         [ExpectedException(typeof(ArgumentException))]
         public void ShouldFailAuthenticationOnEmptyHost()
         {
-            Hawk.Authenticate(ValidAuthorization, " ", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
+            Hawk.Authenticate(ValidAuthorization, "", "get", new Uri("http://example.com:8080/resource/4?filter=a"), GetCredential);
         }
 
         [TestMethod]
@@ -133,7 +136,6 @@ namespace HawkNet.Tests
             var principal = Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), (s) => credential);
 
             Assert.IsNotNull(principal);
-            Assert.IsInstanceOfType(principal, typeof(ClaimsPrincipal));
         }
 
         [TestMethod]
@@ -156,7 +158,6 @@ namespace HawkNet.Tests
             var principal = Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), (s) => credential);
 
             Assert.IsNotNull(principal);
-            Assert.IsInstanceOfType(principal, typeof(ClaimsPrincipal));
         }
 
         [TestMethod]
@@ -183,10 +184,9 @@ namespace HawkNet.Tests
                 ts, mac, hash);
 
             var principal = Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), (s) => credential, 
-                requestPayload:new Lazy<byte[]>(() => payload));
+                requestPayload:() => payload);
 
             Assert.IsNotNull(principal);
-            Assert.IsInstanceOfType(principal, typeof(ClaimsPrincipal));
         }
 
         [TestMethod]
@@ -318,7 +318,6 @@ namespace HawkNet.Tests
                 s => credential);
 
             Assert.IsNotNull(claims);
-            Assert.IsInstanceOfType(claims, typeof(ClaimsPrincipal));
         }
 
         private HawkCredential GetCredential(string id)

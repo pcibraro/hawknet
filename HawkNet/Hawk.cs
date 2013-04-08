@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Security;
-using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web;
+
+#if NET45
+using System.Net.Http;
+using System.Security.Claims;
+using System.Threading.Tasks;
+#endif
 
 namespace HawkNet
 {
@@ -30,6 +34,7 @@ namespace HawkNet
             SupportedAttributes = RequiredAttributes.Concat(OptionalAttributes).ToArray();
         }
 
+#if NET45
         /// <summary>
         /// Authenticates an upcoming request message
         /// </summary>
@@ -37,7 +42,7 @@ namespace HawkNet
         /// <param name="credentials">A method for searching across the available credentials</param>
         /// <param name="timestampSkewSec">Time skew in seconds for timestamp verification</param>
         /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
-        public static ClaimsPrincipal Authenticate(HttpRequestMessage request, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
+        public static IPrincipal Authenticate(HttpRequestMessage request, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
             if (request.Method == HttpMethod.Get &&
                 !string.IsNullOrEmpty(request.RequestUri.Query))
@@ -52,13 +57,13 @@ namespace HawkNet
                 }
             }
             
-            var requestPayload = new Lazy<byte[]>(() =>
+            Func<byte[]> requestPayload = () =>
             {
                 var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
                 var payload = task.GetAwaiter().GetResult();
 
                 return payload;
-            });
+            };
 
             return Authenticate(request.Headers.Authorization.Parameter,
                 request.Headers.Host,
@@ -68,6 +73,7 @@ namespace HawkNet
                 timestampSkewSec,
                 requestPayload);
         }
+#endif
 
         /// <summary>
         /// Authenticates an upcoming request message
@@ -80,14 +86,14 @@ namespace HawkNet
         /// <param name="timestampSkewSec">Accepted Time skew for timestamp verification</param>
         /// <param name="payloadHash">Hash of the request payload</param>
         /// <returns></returns>
-        public static ClaimsPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Lazy<byte[]> requestPayload = null)
+        public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
         {
-            if (string.IsNullOrWhiteSpace(authorization))
+            if (string.IsNullOrEmpty(authorization))
             {
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
             }
 
-            if (string.IsNullOrWhiteSpace(host))
+            if (string.IsNullOrEmpty(host))
             {
                 throw new ArgumentException("Host header can not be null or empty", "host");
             }
@@ -125,24 +131,25 @@ namespace HawkNet
                 throw new SecurityException("Missing credentials");
             }
 
-            if (string.IsNullOrWhiteSpace(credential.Algorithm) ||
-                string.IsNullOrWhiteSpace(credential.Key))
+            if (string.IsNullOrEmpty(credential.Algorithm) ||
+                string.IsNullOrEmpty(credential.Key))
             {
                 throw new SecurityException("Invalid credentials");
             }
 
-            if (!SupportedAlgorithms.Any(a => string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
+            if (!SupportedAlgorithms.Any(a => 
+                string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
             {
                 throw new SecurityException("Unknown algorithm");
             }
 
-            if (!string.IsNullOrWhiteSpace(attributes["hash"]))
+            if (!string.IsNullOrEmpty(attributes["hash"]))
             {
                 var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
                 
                 hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
 
-                var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload.Value));
+                var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload()));
 
                 if (attributes["hash"] != hash)
                 {
@@ -150,19 +157,31 @@ namespace HawkNet
                 }
             }
 
-            var mac = CalculateMac(host, method, uri, attributes["ext"], attributes["ts"], attributes["nonce"], credential, "header", attributes["hash"]);
+            var mac = CalculateMac(host, 
+                method, 
+                uri, 
+                attributes["ext"], 
+                attributes["ts"], 
+                attributes["nonce"], 
+                credential, "header", 
+                attributes["hash"]);
+
             if (!mac.Equals(attributes["mac"]))
             {
                 throw new SecurityException("Bad mac");
             }
 
-            var userClaim = new Claim(ClaimTypes.Name, (credential.User != null) ? credential.User : "");
+#if NET45
+            var userClaim = new Claim(ClaimTypes.Name, credential.User);
             var allClaims = Enumerable.Concat(new Claim[] { userClaim }, 
                 (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
 
             var identity = new ClaimsIdentity(allClaims, "Hawk");
             var principal = new ClaimsPrincipal(new ClaimsIdentity[] { identity });
-
+#else
+            var identity = new GenericIdentity(credential.User, "Hawk");
+            var principal = new GenericPrincipal(identity, credential.Roles);
+#endif
             return principal;
         }
 
@@ -180,28 +199,37 @@ namespace HawkNet
         /// <returns>Hawk authorization header</returns>
         public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null, string nonce = null, string payloadHash = null)
         {
-            if(string.IsNullOrWhiteSpace(host))
+            if(string.IsNullOrEmpty(host))
                 throw new ArgumentException("The host can not be null or empty", "host");
 
-            if (string.IsNullOrWhiteSpace(method))
+            if (string.IsNullOrEmpty(method))
                 throw new ArgumentException("The method can not be null or empty", "method");
 
             if(credential == null)
                 throw new ArgumentNullException("The credential can not be null", "credential");
 
-            if (string.IsNullOrWhiteSpace(nonce))
+            if (string.IsNullOrEmpty(nonce))
             {
                 nonce = GetRandomString(6);
             }
 
-            var normalizedTs = (ConvertToUnixTimestamp((ts.HasValue) ? ts.Value : DateTime.UtcNow) / 1000).ToString();
+            var normalizedTs = (ConvertToUnixTimestamp((ts.HasValue) 
+                ? ts.Value : DateTime.UtcNow) / 1000).ToString();
 
-            var mac = CalculateMac(host, method, uri, ext, normalizedTs, nonce, credential, "header", payloadHash);
+            var mac = CalculateMac(host, 
+                method, 
+                uri, 
+                ext, 
+                normalizedTs, 
+                nonce, 
+                credential, 
+                "header", 
+                payloadHash);
 
             var authorization = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",
                     credential.Id, normalizedTs, nonce, mac, ext);
 
-            if (!string.IsNullOrWhiteSpace(payloadHash))
+            if (!string.IsNullOrEmpty(payloadHash))
             {
                 authorization += string.Format(", hash=\"{0}\"", payloadHash);
             }
@@ -232,7 +260,7 @@ namespace HawkNet
             return bewit;
         }
 
-        public static ClaimsPrincipal AuthenticateBewit(string bewit, string host, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
+        public static IPrincipal AuthenticateBewit(string bewit, string host, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
             var decodedBewit = Encoding.UTF8.GetString(Convert.FromBase64String(bewit));
 
@@ -270,8 +298,8 @@ namespace HawkNet
                 throw new SecurityException("Missing credentials");
             }
 
-            if (string.IsNullOrWhiteSpace(credential.Algorithm) ||
-                string.IsNullOrWhiteSpace(credential.Key))
+            if (string.IsNullOrEmpty(credential.Algorithm) ||
+                string.IsNullOrEmpty(credential.Key))
             {
                 throw new SecurityException("Invalid credentials");
             }
@@ -289,13 +317,17 @@ namespace HawkNet
                 throw new SecurityException("Bad mac");
             }
 
-            var userClaim = new Claim(ClaimTypes.Name, (credential.User != null) ? credential.User : "");
+#if NET45
+            var userClaim = new Claim(ClaimTypes.Name, credential.User);
             var allClaims = Enumerable.Concat(new Claim[] { userClaim },
                 (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
 
             var identity = new ClaimsIdentity(allClaims, "Hawk");
             var principal = new ClaimsPrincipal(new ClaimsIdentity[] { identity });
-
+#else
+            var identity = new GenericIdentity(credential.User, "Hawk");
+            var principal = new GenericPrincipal(identity, credential.Roles);
+#endif
             return principal;
         }
 
@@ -372,8 +404,8 @@ namespace HawkNet
                         uri.PathAndQuery + "\n" +
                         host.ToLower() + "\n" +
                         uri.Port.ToString() + "\n" +
-                        ((!string.IsNullOrWhiteSpace(payloadHash)) ? payloadHash + "\n" : "") + 
-                        ((!string.IsNullOrWhiteSpace(ext)) ? ext : "") + "\n";
+                        ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash + "\n" : "") + 
+                        ((!string.IsNullOrEmpty(ext)) ? ext : "") + "\n";
 
             var messageBytes = Encoding.ASCII.GetBytes(normalized);
 
@@ -421,7 +453,7 @@ namespace HawkNet
             var parsedQueryString = HttpUtility.ParseQueryString(uri.Query);
             parsedQueryString.Remove("bewit");
 
-            var resultingQuery = string.Join("&", parsedQueryString.Cast<string>().Select(e => e + "=" + parsedQueryString[e]));
+            var resultingQuery = string.Join("&", parsedQueryString.Cast<string>().Select(e => e + "=" + parsedQueryString[e]).ToArray());
 
             var newUri = string.Format("{0}://{1}:{2}{3}",
                 uri.Scheme,

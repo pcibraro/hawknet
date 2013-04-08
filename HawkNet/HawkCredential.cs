@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Text;
+
+#if NET45
+using System.Security.Claims;
 using System.Threading.Tasks;
+#endif
 
 namespace HawkNet
 {
@@ -12,6 +15,14 @@ namespace HawkNet
     /// </summary>
     public class HawkCredential
     {
+        public HawkCredential()
+        {
+            this.User = string.Empty;
+#if !NET45
+            this.Roles = new string[] { };
+#endif
+        }
+
         /// <summary>
         /// Key Id
         /// </summary>
@@ -32,9 +43,16 @@ namespace HawkNet
         /// </summary>
         public string User { get; set; }
 
+#if NET45
         /// <summary>
         /// Additional Claims
         /// </summary>
         public Claim[] AdditionalClaims { get; set; }
+#else
+        /// <summary>
+        /// User roles
+        /// </summary>
+        public string[] Roles { get; set; }
+#endif
     }
 }
