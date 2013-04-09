@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Web;
+using System.Diagnostics;
 
 #if NET45
 using System.Net.Http;
@@ -28,6 +29,8 @@ namespace HawkNet
         readonly static string[] SupportedAttributes;
         readonly static string[] SupportedAlgorithms = { "HMACSHA1", "HMACSHA256" };
         readonly static string RandomSource = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+        static TraceSource TraceSource = new TraceSource("HawkNet");
 
         static Hawk()
         {
@@ -88,6 +91,9 @@ namespace HawkNet
         /// <returns></returns>
         public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
         {
+            TraceSource.TraceInformation(string.Format("Received Auth header: {0}",
+                authorization));
+            
             if (string.IsNullOrEmpty(authorization))
             {
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
@@ -407,11 +413,19 @@ namespace HawkNet
                         ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash + "\n" : "") + 
                         ((!string.IsNullOrEmpty(ext)) ? ext : "") + "\n";
 
+            TraceSource.TraceInformation(string.Format("Normalized String: {0}",
+                normalized));
+
             var messageBytes = Encoding.ASCII.GetBytes(normalized);
 
             var mac = hmac.ComputeHash(messageBytes);
 
-            return Convert.ToBase64String(mac);
+            var encodedMac = Convert.ToBase64String(mac);
+
+            TraceSource.TraceInformation(string.Format("Calculated mac: {0}",
+                encodedMac));
+
+            return encodedMac;
         }
 
         /// <summary>

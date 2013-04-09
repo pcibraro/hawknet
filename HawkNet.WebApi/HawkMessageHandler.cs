@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -18,33 +19,22 @@ namespace HawkNet.WebApi
 {
     public class HawkMessageHandler : DelegatingHandler
     {
+        static TraceSource TraceSource = new TraceSource("HawkNet");
+
         const string Scheme = "Hawk";
         
         Func<string, HawkCredential> credentials;
-        ITraceWriter traceWriter;
 
-        public HawkMessageHandler(Func<string, HawkCredential> credentials, ITraceWriter traceWriter)
+        public HawkMessageHandler(Func<string, HawkCredential> credentials)
             : base()
         {
             this.credentials = credentials;
-            this.traceWriter = traceWriter;
-        }
-
-        public HawkMessageHandler(Func<string, HawkCredential> credentials)
-            : this(credentials, new NullTraceWriter())
-        {
         }
 
         public HawkMessageHandler(HttpMessageHandler innerHandler, Func<string, HawkCredential> credentials)
-            : this(innerHandler, credentials, new NullTraceWriter())
-        {
-        }
-
-        public HawkMessageHandler(HttpMessageHandler innerHandler, Func<string, HawkCredential> credentials, ITraceWriter traceWriter)
             : base(innerHandler)
         {
             this.credentials = credentials;
-            this.traceWriter = traceWriter;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
@@ -58,6 +48,8 @@ namespace HawkNet.WebApi
                 var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
                 if (query["bewit"] != null)
                 {
+                    TraceSource.TraceInformation(string.Format("Bewit found {0}",
+                        query["bewit"]));
                     try
                     {
                         principal = Hawk.Authenticate(request, credentials);
@@ -81,12 +73,17 @@ namespace HawkNet.WebApi
             if (request.Headers.Authorization != null &&
                 !string.Equals(request.Headers.Authorization.Scheme, Scheme))
             {
+                TraceSource.TraceInformation(string.Format("Authorization skipped. Schema found {0}",
+                        request.Headers.Authorization.Scheme));
+
                 return base.SendAsync(request, cancellationToken);
             }
 
             if (request.Headers.Authorization == null ||
                 string.IsNullOrWhiteSpace(request.Headers.Authorization.Scheme))
             {
+                TraceSource.TraceInformation("Authorization header not found");
+
                 return base.SendAsync(request, cancellationToken).ContinueWith<HttpResponseMessage>(r =>
                     {
                         if (r.Result.StatusCode == HttpStatusCode.Unauthorized)
@@ -117,6 +114,8 @@ namespace HawkNet.WebApi
                 }
                 catch (SecurityException ex)
                 {
+                    TraceSource.TraceData(TraceEventType.Error, 0, ex.ToString());
+
                     return ToResponse(request, HttpStatusCode.Unauthorized, ex.Message);
                 }
 
@@ -153,14 +152,5 @@ namespace HawkNet.WebApi
 
             return tsc.Task;
         }
-
-        class NullTraceWriter : ITraceWriter
-        {
-            public void Trace(System.Net.Http.HttpRequestMessage request, string category, TraceLevel level, Action<TraceRecord> traceAction)
-            {
-            }
-        }
-
-        
     }
 }

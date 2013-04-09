@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -12,6 +13,8 @@ namespace HawkNet.WebApi
 {
     public class HawkClientMessageHandler : DelegatingHandler
     {
+        static TraceSource TraceSource = new TraceSource("HawkNet");
+
         HawkCredential credential;
         string ext;
         DateTime? ts;
@@ -62,6 +65,9 @@ namespace HawkNet.WebApi
                 this.ts,
                 this.nonce,
                 payloadHash);
+
+            TraceSource.TraceInformation(string.Format("Auth header {0}",
+                auth));
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", auth);
 
