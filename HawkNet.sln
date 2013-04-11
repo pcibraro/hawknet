@@ -79,14 +79,14 @@ Global
 		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Release|Any CPU.Build.0 = Release|Any CPU
-		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Signed|Any CPU.ActiveCfg = Release|Any CPU
-		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Signed|Any CPU.Build.0 = Release|Any CPU
+		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Signed|Any CPU.ActiveCfg = Signed|Any CPU
+		{91C0356C-0A24-48AD-B180-D2AE1772D833}.Signed|Any CPU.Build.0 = Signed|Any CPU
 		{76771F39-D04E-4051-B407-B7E1C6518954}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{76771F39-D04E-4051-B407-B7E1C6518954}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76771F39-D04E-4051-B407-B7E1C6518954}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76771F39-D04E-4051-B407-B7E1C6518954}.Release|Any CPU.Build.0 = Release|Any CPU
-		{76771F39-D04E-4051-B407-B7E1C6518954}.Signed|Any CPU.ActiveCfg = Release|Any CPU
-		{76771F39-D04E-4051-B407-B7E1C6518954}.Signed|Any CPU.Build.0 = Release|Any CPU
+		{76771F39-D04E-4051-B407-B7E1C6518954}.Signed|Any CPU.ActiveCfg = Signed|Any CPU
+		{76771F39-D04E-4051-B407-B7E1C6518954}.Signed|Any CPU.Build.0 = Signed|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
