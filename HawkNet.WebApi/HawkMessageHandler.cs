@@ -17,6 +17,10 @@ using System.Web.Http.Tracing;
 
 namespace HawkNet.WebApi
 {
+    /// <summary>
+    /// A HttpMessageHandler implementation for being used in the ASP.NET Web API 
+    /// runtime pipeline.
+    /// </summary>
     public class HawkMessageHandler : DelegatingHandler
     {
         static TraceSource TraceSource = new TraceSource("HawkNet");
@@ -28,12 +32,18 @@ namespace HawkNet.WebApi
         public HawkMessageHandler(Func<string, HawkCredential> credentials)
             : base()
         {
+            if (credentials == null)
+                throw new ArgumentNullException("credentials");
+
             this.credentials = credentials;
         }
 
         public HawkMessageHandler(HttpMessageHandler innerHandler, Func<string, HawkCredential> credentials)
             : base(innerHandler)
         {
+            if (credentials == null)
+                throw new ArgumentNullException("credentials");
+
             this.credentials = credentials;
         }
 

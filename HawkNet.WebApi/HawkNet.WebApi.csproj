@@ -72,8 +72,10 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RequiresHawkAttribute.cs" />
     <Compile Include="HawkClientMessageHandler.cs" />
     <Compile Include="HawkMessageHandler.cs" />
+    <Compile Include="IHawkCredentialRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

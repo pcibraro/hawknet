@@ -24,9 +24,10 @@ namespace HawkNet.WebApi
         public HawkClientMessageHandler(HttpMessageHandler innerHandler, HawkCredential credential, string ext = "", DateTime? ts = null, string nonce = null, bool includePayloadHash = false)
             : base(innerHandler)
         {
-            if (string.IsNullOrEmpty(credential.Id) ||
-               string.IsNullOrEmpty(credential.Key) ||
-               string.IsNullOrEmpty(credential.Algorithm))
+            if (credential == null ||
+                string.IsNullOrEmpty(credential.Id) ||
+                string.IsNullOrEmpty(credential.Key) ||
+                string.IsNullOrEmpty(credential.Algorithm))
             {
                 throw new ArgumentException("Invalid Credential", "credential");
             }
