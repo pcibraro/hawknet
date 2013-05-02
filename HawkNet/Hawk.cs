@@ -28,7 +28,9 @@ namespace HawkNet
         readonly static string[] OptionalAttributes = { "ext", "hash" };
         readonly static string[] SupportedAttributes;
         readonly static string[] SupportedAlgorithms = { "HMACSHA1", "HMACSHA256" };
+        
         readonly static string RandomSource = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        readonly static Random Random = new Random(RandomSource.Length); 
 
         static TraceSource TraceSource = new TraceSource("HawkNet");
 
@@ -345,11 +347,10 @@ namespace HawkNet
         public static string GetRandomString(int size)
         {
             var result = new StringBuilder();
-            var random = new Random(RandomSource.Length); 
             
             for (var i = 0; i < size; ++i) 
             {
-                result.Append(RandomSource[random.Next(RandomSource.Length)]);
+                result.Append(RandomSource[Random.Next(RandomSource.Length)]);
             }
 
             return result.ToString();
