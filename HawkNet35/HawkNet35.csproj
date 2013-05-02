@@ -42,9 +42,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\HawkNet\Hawk.cs">
@@ -52,6 +50,9 @@
     </Compile>
     <Compile Include="..\HawkNet\HawkCredential.cs">
       <Link>HawkCredential.cs</Link>
+    </Compile>
+    <Compile Include="..\HawkNet\HttpWebRequestExtensions.cs">
+      <Link>HttpWebRequestExtensions.cs</Link>
     </Compile>
     <Compile Include="..\HawkNet\Properties\AssemblyInfo.cs">
       <Link>Properties\AssemblyInfo.cs</Link>

@@ -39,47 +39,6 @@ namespace HawkNet
             SupportedAttributes = RequiredAttributes.Concat(OptionalAttributes).ToArray();
         }
 
-#if NET45
-        /// <summary>
-        /// Authenticates an upcoming request message
-        /// </summary>
-        /// <param name="request">Http request instance</param>
-        /// <param name="credentials">A method for searching across the available credentials</param>
-        /// <param name="timestampSkewSec">Time skew in seconds for timestamp verification</param>
-        /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
-        public static IPrincipal Authenticate(HttpRequestMessage request, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
-        {
-            if (request.Method == HttpMethod.Get &&
-                !string.IsNullOrEmpty(request.RequestUri.Query))
-            {
-                var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
-                if(query["bewit"] != null)
-                {
-                    return AuthenticateBewit(query["bewit"],
-                        request.Headers.Host,
-                        request.RequestUri,
-                        credentials);
-                }
-            }
-            
-            Func<byte[]> requestPayload = () =>
-            {
-                var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                var payload = task.GetAwaiter().GetResult();
-
-                return payload;
-            };
-
-            return Authenticate(request.Headers.Authorization.Parameter,
-                request.Headers.Host,
-                request.Method.ToString(),
-                request.RequestUri,
-                credentials,
-                timestampSkewSec,
-                requestPayload);
-        }
-#endif
-
         /// <summary>
         /// Authenticates an upcoming request message
         /// </summary>
@@ -221,8 +180,8 @@ namespace HawkNet
                 nonce = GetRandomString(6);
             }
 
-            var normalizedTs = (ConvertToUnixTimestamp((ts.HasValue) 
-                ? ts.Value : DateTime.UtcNow) / 1000).ToString();
+            var normalizedTs = ((int)Math.Floor((ConvertToUnixTimestamp((ts.HasValue) 
+                ? ts.Value : DateTime.UtcNow) / 1000))).ToString();
 
             var mac = CalculateMac(host, 
                 method, 
@@ -268,6 +227,15 @@ namespace HawkNet
             return bewit;
         }
 
+        /// <summary>
+        /// Authenticates a request message using a bewit
+        /// </summary>
+        /// <param name="bewit"></param>
+        /// <param name="host"></param>
+        /// <param name="uri"></param>
+        /// <param name="credentials"></param>
+        /// <param name="timestampSkewSec"></param>
+        /// <returns></returns>
         public static IPrincipal AuthenticateBewit(string bewit, string host, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
             var decodedBewit = Encoding.UTF8.GetString(Convert.FromBase64String(bewit));

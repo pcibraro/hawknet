@@ -73,7 +73,12 @@
   <ItemGroup>
     <Compile Include="Hawk.cs" />
     <Compile Include="HawkCredential.cs" />
+    <Compile Include="HttpRequestMessageExtensions.cs" />
+    <Compile Include="HttpWebRequestExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />

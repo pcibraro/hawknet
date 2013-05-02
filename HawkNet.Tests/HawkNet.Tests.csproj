@@ -56,6 +56,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -71,6 +73,8 @@
   </Choose>
   <ItemGroup>
     <Compile Include="HawkFixture.cs" />
+    <Compile Include="HttpRequestMessageExtensionsTests.cs" />
+    <Compile Include="HttpWebRequestExtensionsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +82,9 @@
       <Project>{f997ce59-eee3-42e4-b41a-b32985994603}</Project>
       <Name>HawkNet</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

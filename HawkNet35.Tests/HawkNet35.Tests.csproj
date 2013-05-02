@@ -65,6 +65,9 @@
     <Compile Include="..\HawkNet.Tests\HawkFixture.cs">
       <Link>HawkFixture.cs</Link>
     </Compile>
+    <Compile Include="..\HawkNet.Tests\HttpWebRequestExtensionsTests.cs">
+      <Link>HttpWebRequestExtensionsTests.cs</Link>
+    </Compile>
     <Compile Include="..\HawkNet.Tests\Properties\AssemblyInfo.cs">
       <Link>Properties\AssemblyInfo.cs</Link>
     </Compile>
