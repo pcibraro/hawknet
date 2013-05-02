@@ -241,9 +241,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", 
-                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential, "header");
+                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", "abcde", credential, "header");
 
-            Assert.AreEqual("zsj33M9aSXrxqlD1qs1haK/IBoQ=", mac);
+            Assert.AreEqual("+B1R31CjFkBu6bi1sRXR8Gj1jgs=", mac);
         }
 
         [TestMethod]
@@ -261,9 +261,9 @@ namespace HawkNet.Tests
             var hash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes("Thank you for flying Hawk")));
 
             var mac = Hawk.CalculateMac("example.com", "Get",
-                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", Hawk.GetRandomString(6), credential, "header", hash);
+                new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", "123456", credential, "header", hash);
 
-            Assert.AreEqual("zsDVOQK4cEPBaj6VOuGQF4nh30w=", mac);
+            Assert.AreEqual("FLDcWaRlOYy9NF6KvAPq/OexkmI=", mac);
         }
 
         [TestMethod]
@@ -276,9 +276,9 @@ namespace HawkNet.Tests
             };
 
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
-                null, "1353788437", Hawk.GetRandomString(6), credential, "header");
+                null, "1353788437", "123456", credential, "header");
 
-            Assert.AreEqual("njcQeYbHor0gwJGoH3+ktSQ7nqs=", mac);
+            Assert.AreEqual("QD5kUly5Qyx5iq0HjVaLQBN+KD4=", mac);
         }
 
         [TestMethod]
