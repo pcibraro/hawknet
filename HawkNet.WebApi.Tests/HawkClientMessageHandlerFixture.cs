@@ -71,10 +71,10 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
-            var nonce = Hawk.GetRandomString(6);
+            var nonce = "123456";
 
             var date = DateTime.UtcNow;
-            var ts = (Hawk.ConvertToUnixTimestamp(date) / 1000).ToString();
+            var ts = ((int)(Math.Floor(Hawk.ConvertToUnixTimestamp(date) / 1000))).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
                 credential, "hello", date, nonce);
@@ -117,7 +117,7 @@ namespace HawkNet.Tests
             var nonce = Hawk.GetRandomString(6);
 
             var date = DateTime.UtcNow;
-            var ts = (Hawk.ConvertToUnixTimestamp(date) / 1000).ToString();
+            var ts = ((int)(Math.Floor(Hawk.ConvertToUnixTimestamp(date) / 1000))).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
                 credential, "hello", date, nonce, true);
@@ -148,7 +148,7 @@ namespace HawkNet.Tests
 
             var ts = "1353788437";
             var ext = "hello";
-            var nonce = Hawk.GetRandomString(6);
+            var nonce = "123456";
 
             var credential = new HawkCredential
             {
@@ -160,7 +160,7 @@ namespace HawkNet.Tests
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri, 
                 ext, ts, nonce, credential, "header");
 
-            Assert.AreEqual("zsj33M9aSXrxqlD1qs1haK/IBoQ=", mac);
+            Assert.AreEqual("oJ/LpJIk3494FGZPUwvqB7Z1/08=", mac);
         }
 
         [TestMethod]
@@ -169,7 +169,7 @@ namespace HawkNet.Tests
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
 
             var ts = "1353788437";
-            var nonce = Hawk.GetRandomString(6);
+            var nonce = "123456";
 
             var credential = new HawkCredential
             {
@@ -181,7 +181,7 @@ namespace HawkNet.Tests
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
                 null, ts, nonce, credential, "header");
 
-            Assert.AreEqual("njcQeYbHor0gwJGoH3+ktSQ7nqs=", mac);
+            Assert.AreEqual("QD5kUly5Qyx5iq0HjVaLQBN+KD4=", mac);
         }
 
         

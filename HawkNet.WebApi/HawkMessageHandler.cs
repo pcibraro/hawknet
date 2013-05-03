@@ -62,7 +62,7 @@ namespace HawkNet.WebApi
                         query["bewit"]));
                     try
                     {
-                        principal = Hawk.Authenticate(request, credentials);
+                        principal = request.Authenticate(credentials);
 
                     }
                     catch (SecurityException ex)
@@ -119,7 +119,7 @@ namespace HawkNet.WebApi
 
                 try
                 {
-                    principal = Hawk.Authenticate(request, credentials);
+                    principal = request.Authenticate(credentials);
 
                 }
                 catch (SecurityException ex)

@@ -57,20 +57,12 @@ namespace HawkNet.WebApi
             }
 
             request.Headers.Host = request.RequestUri.Host;
-            
-            var auth = Hawk.GetAuthorizationHeader(request.Headers.Host,
-                request.Method.ToString(),
-                request.RequestUri,
-                credential,
+
+            request.SignRequest(credential,
                 this.ext,
                 this.ts,
                 this.nonce,
                 payloadHash);
-
-            TraceSource.TraceInformation(string.Format("Auth header {0}",
-                auth));
-
-            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", auth);
 
             return base.SendAsync(request, cancellationToken);
         }
