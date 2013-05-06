@@ -141,6 +141,7 @@ namespace HawkNet.Tests
         [TestMethod]
         public void ShouldParseValidAuthHeaderWithSha256()
         {
+          
             var credential = new HawkCredential
             {
                 Id = "456",
@@ -243,7 +244,7 @@ namespace HawkNet.Tests
             var mac = Hawk.CalculateMac("example.com", "Get", 
                 new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", "abcde", credential, "header");
 
-            Assert.AreEqual("+B1R31CjFkBu6bi1sRXR8Gj1jgs=", mac);
+            Assert.AreEqual("wA0+3ewq39fEvDl9+tm8PF8fpbM=", mac);
         }
 
         [TestMethod]
@@ -278,7 +279,7 @@ namespace HawkNet.Tests
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
                 null, "1353788437", "123456", credential, "header");
 
-            Assert.AreEqual("QD5kUly5Qyx5iq0HjVaLQBN+KD4=", mac);
+            Assert.AreEqual("xzewml0eeTU60IbA45JAj/9GbuY=", mac);
         }
 
         [TestMethod]
