@@ -157,6 +157,7 @@ namespace HawkNet.WebApi
 
             var response = request.CreateResponse(code);
             response.ReasonPhrase = message;
+            response.Content = new StringContent(message);
             
             tsc.SetResult(response);
 
