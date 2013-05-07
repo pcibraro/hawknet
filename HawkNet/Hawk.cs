@@ -379,7 +379,7 @@ namespace HawkNet
                         uri.PathAndQuery + "\n" +
                         sanitizedHost.ToLower() + "\n" +
                         uri.Port.ToString() + "\n" +
-                        ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash + "\n" : "\n") + 
+                        ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash : "") + "\n" + 
                         ((!string.IsNullOrEmpty(ext)) ? ext : "") + "\n";
 
             TraceSource.TraceInformation(string.Format("Normalized String: {0}",
