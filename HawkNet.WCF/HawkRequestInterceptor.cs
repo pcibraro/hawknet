@@ -20,49 +20,47 @@ namespace HawkNet.WCF
 
         Func<string, HawkCredential> credentials;
         bool sendChallenge;
-        string[] excludeUrls;
+        Predicate<Uri> endpointFilter;
 
         public HawkRequestInterceptor(Func<string, HawkCredential> credentials, bool sendChallenge = true,
-            params string[] excludeUrls)
+            Predicate<Uri> endpointFilter = null)
             : base(false)
         {
             this.credentials = credentials;
             this.sendChallenge = sendChallenge;
-            this.excludeUrls = excludeUrls; 
+            this.endpointFilter = endpointFilter; 
         }
 
         public override void ProcessRequest(ref System.ServiceModel.Channels.RequestContext requestContext)
         {
             var request = requestContext.RequestMessage;
-            if(excludeUrls.Any(e => request.Properties.Via.AbsolutePath.Equals
-                (e, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                return;
-            }
 
-            IPrincipal principal = ExtractCredentials(request);
-            if (principal != null)
+            if (endpointFilter == null || endpointFilter(request.Properties.Via))
             {
-                InitializeSecurityContext(request, principal);
-            }
-            else
-            {
-                var reply = Message.CreateMessage(MessageVersion.None, null);
-                var responseProperty = new HttpResponseMessageProperty() { StatusCode = HttpStatusCode.Unauthorized };
-
-                if (sendChallenge)
+                IPrincipal principal = ExtractCredentials(request);
+                if (principal != null)
                 {
-                    var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
-                    var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
-                        ts, "pool.ntp.org");
-                
-                    responseProperty.Headers.Add("WWW-Authenticate", challenge);
+                    InitializeSecurityContext(request, principal);
                 }
+                else
+                {
+                    var reply = Message.CreateMessage(MessageVersion.None, null);
+                    var responseProperty = new HttpResponseMessageProperty() { StatusCode = HttpStatusCode.Unauthorized };
 
-                reply.Properties[HttpResponseMessageProperty.Name] = responseProperty;
-                requestContext.Reply(reply);
+                    if (sendChallenge)
+                    {
+                        var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
+                        var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
+                            ts, "pool.ntp.org");
 
-                requestContext = null;
+                        responseProperty.Headers.Add("WWW-Authenticate", challenge);
+                    }
+
+                    reply.Properties[HttpResponseMessageProperty.Name] = responseProperty;
+                    requestContext.Reply(reply);
+
+                    requestContext = null;
+                }
             }
         }
 
