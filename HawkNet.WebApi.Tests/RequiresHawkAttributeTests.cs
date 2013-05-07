@@ -365,6 +365,31 @@ namespace HawkNet.WebApi.Tests
             Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
         }
 
+        [TestMethod]
+        public void ShouldSkipAuthenticationForEndpoint()
+        {
+            var filter = new RequiresHawkAttribute((id) =>
+            {
+                return new HawkCredential
+                {
+                    Id = "123",
+                    Algorithm = "hmac-sha-0",
+                    Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                    User = "steve"
+                };
+            }, (uri) => !uri.AbsoluteUri.EndsWith("$metadata"));
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/$metadata");
+
+            var context = new HttpActionContext();
+            context.ControllerContext = new HttpControllerContext();
+            context.ControllerContext.Request = request;
+
+            filter.OnAuthorization(context);
+
+            Assert.IsFalse(Thread.CurrentPrincipal.Identity.IsAuthenticated);
+        }
+
         private HawkCredential GetCredential(string id)
         {
             return new HawkCredential

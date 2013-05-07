@@ -28,6 +28,7 @@ namespace HawkNet.WebApi
         const string Scheme = "Hawk";
         
         Func<string, HawkCredential> credentials;
+        Predicate<Uri> endpointFilter;
 
         /// <summary>
         /// Creates a new instance of HawkActionFilter using a type for
@@ -68,36 +69,106 @@ namespace HawkNet.WebApi
             this.credentials = (id) => repository.Get(id);
         }
 
-        public RequiresHawkAttribute(Func<string, HawkCredential> credentials)
+        public RequiresHawkAttribute(Func<string, HawkCredential> credentials, Predicate<Uri> endpointFilter = null)
             : base()
         {
             if (credentials == null)
                 throw new ArgumentNullException("credentials");
 
             this.credentials = credentials;
+            this.endpointFilter = endpointFilter;
         }
 
         public override void OnAuthorization(System.Web.Http.Controllers.HttpActionContext actionContext)
         {
             IPrincipal principal = null;
-
+            
             var request = actionContext.Request;
 
-            if (request.Method == HttpMethod.Get &&
-                request.RequestUri != null &&
-                !string.IsNullOrEmpty(request.RequestUri.Query))
+            if (this.endpointFilter == null ||
+                (this.endpointFilter != null &&
+                 this.endpointFilter(actionContext.Request.RequestUri)))
             {
-                var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
-                if (query["bewit"] != null)
+                if (request.Method == HttpMethod.Get &&
+                    request.RequestUri != null &&
+                    !string.IsNullOrEmpty(request.RequestUri.Query))
                 {
-                    TraceSource.TraceInformation(string.Format("Bewit found {0}",
-                        query["bewit"]));
+                    var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
+                    if (query["bewit"] != null)
+                    {
+                        TraceSource.TraceInformation(string.Format("Bewit found {0}",
+                            query["bewit"]));
+                        try
+                        {
+                            principal = request.Authenticate(credentials);
+                        }
+                        catch (SecurityException ex)
+                        {
+                            actionContext.Response = ToResponse(
+                                request,
+                                HttpStatusCode.Unauthorized,
+                                ex.Message);
+
+                            return;
+                        }
+
+                        Thread.CurrentPrincipal = principal;
+                        if (HttpContext.Current != null)
+                        {
+                            HttpContext.Current.User = principal;
+                        }
+
+                        base.OnAuthorization(actionContext);
+                    }
+                }
+
+                if (request.Headers.Authorization == null)
+                {
+                    actionContext.Response = ChallengeResponse(request);
+                }
+
+                if (request.Headers.Authorization != null &&
+                    !string.Equals(request.Headers.Authorization.Scheme, Scheme))
+                {
+                    actionContext.Response = ToResponse(
+                        request,
+                        HttpStatusCode.Unauthorized,
+                        "Only Hawk Supported");
+
+                    return;
+                }
+
+                if (request.Headers.Authorization != null &&
+                    !string.IsNullOrWhiteSpace(request.Headers.Authorization.Scheme))
+                {
+                    if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
+                    {
+                        actionContext.Response = ToResponse(
+                            request,
+                            HttpStatusCode.BadRequest,
+                            "Invalid header format");
+
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(request.Headers.Host))
+                    {
+                        actionContext.Response = ToResponse(
+                            request,
+                            HttpStatusCode.BadRequest,
+                            "Missing Host header");
+
+                        return;
+                    }
+
                     try
                     {
                         principal = request.Authenticate(credentials);
                     }
                     catch (SecurityException ex)
                     {
+                        TraceSource.TraceData(TraceEventType.Error, 0, ex.ToString());
+
                         actionContext.Response = ToResponse(
                             request,
                             HttpStatusCode.Unauthorized,
@@ -111,74 +182,10 @@ namespace HawkNet.WebApi
                     {
                         HttpContext.Current.User = principal;
                     }
-
-                    base.OnAuthorization(actionContext);
                 }
             }
 
-            if (request.Headers.Authorization == null)
-            {
-                actionContext.Response = ChallengeResponse(request);
-            }
-
-            if (request.Headers.Authorization != null &&
-                !string.Equals(request.Headers.Authorization.Scheme, Scheme))
-            {
-                actionContext.Response = ToResponse(
-                    request,
-                    HttpStatusCode.Unauthorized,
-                    "Only Hawk Supported");
-
-                return;
-            }
-
-            if (request.Headers.Authorization != null &&
-                !string.IsNullOrWhiteSpace(request.Headers.Authorization.Scheme))
-            {
-                if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
-                {
-                    actionContext.Response = ToResponse(
-                        request,
-                        HttpStatusCode.BadRequest,
-                        "Invalid header format");
-
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Headers.Host))
-                {
-                    actionContext.Response = ToResponse(
-                        request,
-                        HttpStatusCode.BadRequest,
-                        "Missing Host header");
-
-                    return;
-                }
-
-                try
-                {
-                    principal = request.Authenticate(credentials);
-                }
-                catch (SecurityException ex)
-                {
-                    TraceSource.TraceData(TraceEventType.Error, 0, ex.ToString());
-
-                    actionContext.Response = ToResponse(
-                        request,
-                        HttpStatusCode.Unauthorized,
-                        ex.Message);
-
-                    return;
-                }
-
-                Thread.CurrentPrincipal = principal;
-                if (HttpContext.Current != null)
-                {
-                    HttpContext.Current.User = principal;
-                }
-
-                base.OnAuthorization(actionContext);
-            }
+            base.OnAuthorization(actionContext);
         }
 
         private static HttpResponseMessage ToResponse(HttpRequestMessage request, 
