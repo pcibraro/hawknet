@@ -387,7 +387,7 @@ namespace HawkNet.WebApi.Tests
 
             filter.OnAuthorization(context);
 
-            Assert.IsFalse(Thread.CurrentPrincipal.Identity.IsAuthenticated);
+            Assert.IsNull(context.Response);
         }
 
         private HawkCredential GetCredential(string id)

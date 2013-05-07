@@ -160,7 +160,7 @@ namespace HawkNet.Tests
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri, 
                 ext, ts, nonce, credential, "header");
 
-            Assert.AreEqual("oJ/LpJIk3494FGZPUwvqB7Z1/08=", mac);
+            Assert.AreEqual("AJhfGJR+mEVOISNMDUIeLr9ONgc=", mac);
         }
 
         [TestMethod]
@@ -181,7 +181,7 @@ namespace HawkNet.Tests
             var mac = Hawk.CalculateMac("example.com", "Get", new Uri("http://example.com:8080/resource/4?filter=a"),
                 null, ts, nonce, credential, "header");
 
-            Assert.AreEqual("QD5kUly5Qyx5iq0HjVaLQBN+KD4=", mac);
+            Assert.AreEqual("xzewml0eeTU60IbA45JAj/9GbuY=", mac);
         }
 
         
