@@ -32,6 +32,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet.ServiceStack", "Haw
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.ServiceStack", "Example.ServiceStack\Example.ServiceStack.csproj", "{0A38529D-2205-4E59-98BD-396E7E9A9311}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet.RestSharp35", "HawkNet.RestSharp35\HawkNet.RestSharp35.csproj", "{AC598DC0-DAB1-4B75-993E-DD0EA0849015}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,12 @@ Global
 		{0A38529D-2205-4E59-98BD-396E7E9A9311}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0A38529D-2205-4E59-98BD-396E7E9A9311}.Signed|Any CPU.ActiveCfg = Release|Any CPU
 		{0A38529D-2205-4E59-98BD-396E7E9A9311}.Signed|Any CPU.Build.0 = Release|Any CPU
+		{AC598DC0-DAB1-4B75-993E-DD0EA0849015}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC598DC0-DAB1-4B75-993E-DD0EA0849015}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC598DC0-DAB1-4B75-993E-DD0EA0849015}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC598DC0-DAB1-4B75-993E-DD0EA0849015}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC598DC0-DAB1-4B75-993E-DD0EA0849015}.Signed|Any CPU.ActiveCfg = Release|Any CPU
+		{AC598DC0-DAB1-4B75-993E-DD0EA0849015}.Signed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
