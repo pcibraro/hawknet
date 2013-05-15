@@ -20,10 +20,10 @@ namespace HawkNet.WCF
 
         Func<string, HawkCredential> credentials;
         bool sendChallenge;
-        Predicate<Uri> endpointFilter;
+        Predicate<Message> endpointFilter;
 
         public HawkRequestInterceptor(Func<string, HawkCredential> credentials, bool sendChallenge = true,
-            Predicate<Uri> endpointFilter = null)
+            Predicate<Message> endpointFilter = null)
             : base(false)
         {
             this.credentials = credentials;
@@ -34,8 +34,8 @@ namespace HawkNet.WCF
         public override void ProcessRequest(ref System.ServiceModel.Channels.RequestContext requestContext)
         {
             var request = requestContext.RequestMessage;
-
-            if (endpointFilter == null || endpointFilter(request.Properties.Via))
+            
+            if (endpointFilter == null || endpointFilter(request))
             {
                 IPrincipal principal = ExtractCredentials(request);
                 if (principal != null)

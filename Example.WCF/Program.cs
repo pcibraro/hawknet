@@ -33,7 +33,7 @@ namespace Example.WCF
             host.Interceptors.Add(new HawkRequestInterceptor(
                 credentials, 
                 false,
-                (uri) => !uri.AbsoluteUri.EndsWith("$metadata")));
+                (message) => !message.Properties.Via.AbsoluteUri.EndsWith("$metadata")));
 
             host.Open();
 
