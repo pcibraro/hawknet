@@ -377,7 +377,7 @@ namespace HawkNet.WebApi.Tests
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 };
-            }, (uri) => !uri.AbsoluteUri.EndsWith("$metadata"));
+            }, (r) => !r.RequestUri.AbsoluteUri.EndsWith("$metadata"));
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/$metadata");
 

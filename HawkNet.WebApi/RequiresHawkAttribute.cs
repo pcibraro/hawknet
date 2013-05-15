@@ -28,7 +28,7 @@ namespace HawkNet.WebApi
         const string Scheme = "Hawk";
         
         Func<string, HawkCredential> credentials;
-        Predicate<Uri> endpointFilter;
+        Predicate<HttpRequestMessage> endpointFilter;
 
         /// <summary>
         /// Creates a new instance of HawkActionFilter using a type for
@@ -69,7 +69,7 @@ namespace HawkNet.WebApi
             this.credentials = (id) => repository.Get(id);
         }
 
-        public RequiresHawkAttribute(Func<string, HawkCredential> credentials, Predicate<Uri> endpointFilter = null)
+        public RequiresHawkAttribute(Func<string, HawkCredential> credentials, Predicate<HttpRequestMessage> endpointFilter = null)
             : base()
         {
             if (credentials == null)
@@ -87,7 +87,7 @@ namespace HawkNet.WebApi
 
             if (this.endpointFilter == null ||
                 (this.endpointFilter != null &&
-                 this.endpointFilter(actionContext.Request.RequestUri)))
+                 this.endpointFilter(actionContext.Request)))
             {
                 if (request.Method == HttpMethod.Get &&
                     request.RequestUri != null &&
