@@ -132,7 +132,7 @@ namespace HawkNet
                 credential, "header", 
                 attributes["hash"]);
 
-            if (!mac.Equals(attributes["mac"]))
+            if (!IsEqual(mac, attributes["mac"]))
             {
                 throw new SecurityException("Bad mac");
             }
@@ -287,7 +287,7 @@ namespace HawkNet
             var mac = CalculateMac(uri.Host, "GET", RemoveBewitFromQuery(uri), 
                 bewitParts[3], bewitParts[1], "", credential, "bewit");
 
-            if (!mac.Equals(bewitParts[2]))
+            if (!IsEqual(mac, bewitParts[2]))
             {
                 throw new SecurityException("Bad mac");
             }
@@ -450,6 +450,22 @@ namespace HawkNet
             }
 
             return new Uri(newUri);
+        }
+
+        // Fixed time comparision
+        private static bool IsEqual(string a, string b) 
+        {
+            if (a.Length != b.Length) 
+            {
+                return false;
+            }
+
+            int result = 0;
+            for (int i = 0; i < a.Length; i++) {
+                result |= a[i] ^ b[i];
+            }
+
+            return result == 0;
         }
     }
 }
