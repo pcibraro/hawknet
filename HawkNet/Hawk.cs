@@ -113,7 +113,7 @@ namespace HawkNet
             {
                 var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
                 
-                hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
+                hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
 
                 var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload()));
 
@@ -366,7 +366,7 @@ namespace HawkNet
         public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential, string type, string payloadHash = null)
         {
             var hmac = HMAC.Create(credential.Algorithm);
-            hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
+            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
 
             var sanitizedHost = (host.IndexOf(':') > 0) ?
                 host.Substring(0, host.IndexOf(':')) :
@@ -385,7 +385,7 @@ namespace HawkNet
             TraceSource.TraceInformation(string.Format("Normalized String: {0}",
                 normalized));
 
-            var messageBytes = Encoding.ASCII.GetBytes(normalized);
+            var messageBytes = Encoding.UTF8.GetBytes(normalized);
 
             var mac = hmac.ComputeHash(messageBytes);
 
