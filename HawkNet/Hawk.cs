@@ -172,7 +172,7 @@ namespace HawkNet
                 throw new ArgumentException("The method can not be null or empty", "method");
 
             if(credential == null)
-                throw new ArgumentNullException("The credential can not be null", "credential");
+                throw new ArgumentNullException("credential", "The credential can not be null");
 
             if (string.IsNullOrEmpty(nonce))
             {
