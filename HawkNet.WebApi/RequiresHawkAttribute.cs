@@ -119,6 +119,8 @@ namespace HawkNet.WebApi
                         }
 
                         base.OnAuthorization(actionContext);
+
+                        return;
                     }
                 }
 

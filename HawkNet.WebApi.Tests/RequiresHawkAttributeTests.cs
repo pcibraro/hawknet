@@ -332,6 +332,36 @@ namespace HawkNet.WebApi.Tests
         }
 
         [TestMethod]
+        public void ShouldParseValidBewit()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "hmacsha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var filter = new RequiresHawkAttribute((id) =>
+            {
+                return credential;
+            });
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?filter=a"), credential, 1000);
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a&bewit=" + bewit);
+            request.Headers.Host = "example.com";
+
+            var context = new HttpActionContext();
+            context.ControllerContext = new HttpControllerContext();
+            context.ControllerContext.Request = request;
+
+            filter.OnAuthorization(context);
+
+            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
+        }
+
+        [TestMethod]
         public void ShouldParseValidAuthHeaderWithSha256()
         {
             var credential = new HawkCredential
