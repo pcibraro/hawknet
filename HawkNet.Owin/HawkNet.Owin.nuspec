@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Pablo Cibraro</authors>
+    <owners>Pablo Cibraro</owners>
+    <projectUrl>https://github.com/pcibraro/hawknet</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Hawk Http Authentication for Microsoft Katana</description>
+    <copyright>Copyright 2013</copyright>
+    <tags>Auth Security Hawk OWIN Katana</tags>
+  </metadata>
+</package>

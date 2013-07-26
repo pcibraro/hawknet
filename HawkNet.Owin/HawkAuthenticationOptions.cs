@@ -14,7 +14,6 @@ namespace HawkNet.Owin
         public HawkAuthenticationOptions()
             : base(Scheme)
         {
-            //this.AuthenticationMode = Microsoft.Owin.Security.AuthenticationMode.Passive;
         }
 
         public Func<string, HawkCredential> Credentials { get; set; }
