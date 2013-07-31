@@ -38,6 +38,79 @@ namespace HawkNet
             SupportedAttributes = RequiredAttributes.Concat(OptionalAttributes).ToArray();
         }
 
+#if NET45
+        /// <summary>
+        /// Authenticates an upcoming request message
+        /// </summary>
+        /// <param name="authorization">Authorization header</param>
+        /// <param name="host">Host header</param>
+        /// <param name="method">Request method</param>
+        /// <param name="uri">Request Uri</param>
+        /// <param name="credentials">A method for searching across the available credentials</param>
+        /// <param name="timestampSkewSec">Accepted Time skew for timestamp verification</param>
+        /// <param name="payloadHash">Hash of the request payload</param>
+        /// <returns></returns>
+        public static async Task<IPrincipal> AuthenticateAsync(string authorization, string host, string method, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
+        {
+            TraceSource.TraceInformation(string.Format("Received Auth header: {0}",
+                authorization));
+
+            if (string.IsNullOrEmpty(authorization))
+            {
+                throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
+            }
+
+            if (string.IsNullOrEmpty(host))
+            {
+                throw new ArgumentException("Host header can not be null or empty", "host");
+            }
+
+            var attributes = ParseAttributes(authorization);
+
+            ValidateAttributes(timestampSkewSec, attributes);
+
+            HawkCredential credential = null;
+            try
+            {
+                credential = await credentials(attributes["id"]);
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityException("Unknown user", ex);
+            }
+
+            ValidateCredentials(credential);
+
+            if (!string.IsNullOrEmpty(attributes["hash"]))
+            {
+                ValidatePayload(credential, attributes["hash"], requestPayload);
+            }
+
+            var mac = CalculateMac(host,
+                method,
+                uri,
+                attributes["ext"],
+                attributes["ts"],
+                attributes["nonce"],
+                credential, "header",
+                attributes["hash"]);
+
+            if (!IsEqual(mac, attributes["mac"]))
+            {
+                throw new SecurityException("Bad mac");
+            }
+
+            var userClaim = new Claim(ClaimTypes.Name, credential.User);
+            var allClaims = Enumerable.Concat(new Claim[] { userClaim }, 
+                (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
+
+            var identity = new ClaimsIdentity(allClaims, "Hawk");
+            var principal = new ClaimsPrincipal(new ClaimsIdentity[] { identity });
+
+            return principal;
+        }
+#endif
+
         /// <summary>
         /// Authenticates an upcoming request message
         /// </summary>
@@ -66,21 +139,7 @@ namespace HawkNet
 
             var attributes = ParseAttributes(authorization);
 
-            if (!RequiredAttributes.All(a => attributes.AllKeys.Any(k => k == a)))
-            {
-                throw new SecurityException("Missing attributes");
-            }
-
-            if (!attributes.AllKeys.All(a => SupportedAttributes.Any(k => k == a)))
-            {
-                throw new SecurityException( "Unknown attributes");
-            }
-
-            // Check timestamp staleness
-            if (!CheckTimestamp(attributes["ts"], timestampSkewSec))
-            {
-                throw new SecurityException("Stale or missing timestamp");
-            }
+            ValidateAttributes(timestampSkewSec, attributes);
 
             HawkCredential credential = null;
             try
@@ -92,35 +151,11 @@ namespace HawkNet
                 throw new SecurityException("Unknown user", ex);
             }
 
-            if (credential == null)
-            {
-                throw new SecurityException("Missing credentials");
-            }
-
-            if (string.IsNullOrEmpty(credential.Algorithm) ||
-                string.IsNullOrEmpty(credential.Key))
-            {
-                throw new SecurityException("Invalid credentials");
-            }
-
-            if (!SupportedAlgorithms.Any(a => 
-                string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                throw new SecurityException("Unknown algorithm");
-            }
+            ValidateCredentials(credential);
 
             if (!string.IsNullOrEmpty(attributes["hash"]))
             {
-                var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
-                
-                hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
-
-                var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload()));
-
-                if (attributes["hash"] != hash)
-                {
-                    throw new SecurityException("Bad payload hash");
-                }
+                ValidatePayload(credential, attributes["hash"], requestPayload);
             }
 
             var mac = CalculateMac(host, 
@@ -226,6 +261,50 @@ namespace HawkNet
             return bewit;
         }
 
+#if NET45
+        /// <summary>
+        /// Authenticates a request message using a bewit
+        /// </summary>
+        /// <param name="bewit"></param>
+        /// <param name="host"></param>
+        /// <param name="uri"></param>
+        /// <param name="credentials"></param>
+        /// <param name="timestampSkewSec"></param>
+        /// <returns></returns>
+        public static async Task<IPrincipal> AuthenticateBewitAsync(string bewit, string host, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60)
+        {
+            var bewitParts = ValidateBewit(bewit);
+
+            HawkCredential credential = null;
+            try
+            {
+                credential = await credentials(bewitParts[0]);
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityException("Unknown user", ex);
+            }
+
+            ValidateCredentials(credential);
+
+            var mac = CalculateMac(uri.Host, "GET", RemoveBewitFromQuery(uri),
+                bewitParts[3], bewitParts[1], "", credential, "bewit");
+
+            if (!IsEqual(mac, bewitParts[2]))
+            {
+                throw new SecurityException("Bad mac");
+            }
+
+            var userClaim = new Claim(ClaimTypes.Name, credential.User);
+            var allClaims = Enumerable.Concat(new Claim[] { userClaim },
+                (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
+
+            var identity = new ClaimsIdentity(allClaims, "Hawk");
+            var principal = new ClaimsPrincipal(new ClaimsIdentity[] { identity });
+            
+            return principal;
+        }
+#endif
         /// <summary>
         /// Authenticates a request message using a bewit
         /// </summary>
@@ -237,26 +316,7 @@ namespace HawkNet
         /// <returns></returns>
         public static IPrincipal AuthenticateBewit(string bewit, string host, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
-            var decodedBewit = Encoding.UTF8.GetString(Convert.FromBase64String(bewit));
-
-            var bewitParts = decodedBewit.Split('\\');
-            if (bewitParts.Length != 4) 
-            {
-                throw new SecurityException("Invalid bewit structure");
-            }
-
-            double expiration;
-            if(!double.TryParse(bewitParts[1], out expiration))
-            {
-                throw new SecurityException("Invalid expiration in bewit structure");
-            }
-
-            var now = ConvertToUnixTimestamp(DateTime.Now);
-
-            if (expiration * 1000 <= now) 
-            {
-                throw new SecurityException("Access expired");
-            }
+            var bewitParts = ValidateBewit(bewit);
 
             HawkCredential credential = null;
             try
@@ -268,21 +328,7 @@ namespace HawkNet
                 throw new SecurityException("Unknown user", ex);
             }
 
-            if (credential == null)
-            {
-                throw new SecurityException("Missing credentials");
-            }
-
-            if (string.IsNullOrEmpty(credential.Algorithm) ||
-                string.IsNullOrEmpty(credential.Key))
-            {
-                throw new SecurityException("Invalid credentials");
-            }
-
-            if (!SupportedAlgorithms.Any(a => string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
-            {
-                throw new SecurityException("Unknown algorithm");
-            }
+            ValidateCredentials(credential);
 
             var mac = CalculateMac(uri.Host, "GET", RemoveBewitFromQuery(uri), 
                 bewitParts[3], bewitParts[1], "", credential, "bewit");
@@ -450,6 +496,84 @@ namespace HawkNet
             }
 
             return new Uri(newUri);
+        }
+
+        private static void ValidateAttributes(int timestampSkewSec, NameValueCollection attributes)
+        {
+            if (!RequiredAttributes.All(a => attributes.AllKeys.Any(k => k == a)))
+            {
+                throw new SecurityException("Missing attributes");
+            }
+
+            if (!attributes.AllKeys.All(a => SupportedAttributes.Any(k => k == a)))
+            {
+                throw new SecurityException("Unknown attributes");
+            }
+
+            // Check timestamp staleness
+            if (!CheckTimestamp(attributes["ts"], timestampSkewSec))
+            {
+                throw new SecurityException("Stale or missing timestamp");
+            }
+        }
+
+        private static void ValidateCredentials(HawkCredential credential)
+        {
+            if (credential == null)
+            {
+                throw new SecurityException("Missing credentials");
+            }
+
+            if (string.IsNullOrEmpty(credential.Algorithm) ||
+                string.IsNullOrEmpty(credential.Key))
+            {
+                throw new SecurityException("Invalid credentials");
+            }
+
+            if (!SupportedAlgorithms.Any(a =>
+                string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                throw new SecurityException("Unknown algorithm");
+            }
+        }
+
+        private static void ValidatePayload(HawkCredential credential, string receivedHash, Func<byte[]> requestPayload)
+        {
+            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+
+            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
+
+            var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload()));
+
+            if (receivedHash != hash)
+            {
+                throw new SecurityException("Bad payload hash");
+            }
+        }
+
+        private static string[] ValidateBewit(string bewit)
+        {
+            var decodedBewit = Encoding.UTF8.GetString(Convert.FromBase64String(bewit));
+
+            var bewitParts = decodedBewit.Split('\\');
+            if (bewitParts.Length != 4)
+            {
+                throw new SecurityException("Invalid bewit structure");
+            }
+
+            double expiration;
+            if (!double.TryParse(bewitParts[1], out expiration))
+            {
+                throw new SecurityException("Invalid expiration in bewit structure");
+            }
+
+            var now = ConvertToUnixTimestamp(DateTime.Now);
+
+            if (expiration * 1000 <= now)
+            {
+                throw new SecurityException("Access expired");
+            }
+            return bewitParts;
         }
 
         // Fixed time comparision

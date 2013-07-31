@@ -321,6 +321,50 @@ namespace HawkNet.Tests
             Assert.IsNotNull(claims);
         }
 
+#if NET45
+        [TestMethod]
+        public void ShouldAuthenticateBewitAsync()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "hmacsha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?filter=a"), credential,
+                200, "hello");
+
+            var claims = Hawk.AuthenticateBewitAsync(bewit, "example.com", new Uri("http://example.com:8080/resource/4?filter=a&bewit=" + bewit),
+                s => Task.FromResult(credential));
+
+            Assert.IsNotNull(claims);
+        }
+
+        [TestMethod]
+        public void ShouldParseValidAuthHeaderWithSha1Async()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "hmacsha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
+
+            var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
+                ts, mac);
+
+            var principal = Hawk.AuthenticateAsync(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), 
+                (s) => Task.FromResult(credential));
+
+            Assert.IsNotNull(principal);
+        }
+#endif
+
         private HawkCredential GetCredential(string id)
         {
             return new HawkCredential
