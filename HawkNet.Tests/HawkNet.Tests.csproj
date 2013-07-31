@@ -73,7 +73,6 @@
   </Choose>
   <ItemGroup>
     <Compile Include="HawkFixture.cs" />
-    <Compile Include="HttpRequestMessageExtensionsTests.cs" />
     <Compile Include="HttpWebRequestExtensionsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
