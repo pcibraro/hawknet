@@ -16,6 +16,6 @@ namespace HawkNet.Owin
         {
         }
 
-        public Func<string, HawkCredential> Credentials { get; set; }
+        public Func<string, Task<HawkCredential>> Credentials { get; set; }
     }
 }

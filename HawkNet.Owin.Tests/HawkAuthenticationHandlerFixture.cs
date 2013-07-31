@@ -234,7 +234,7 @@ namespace HawkNet.Owin.Tests
             middleware.Invoke(request, response);
 
             Assert.AreEqual(401, response.StatusCode);
-            Assert.AreEqual("Missing credentials", logger.Messages[0]);
+            Assert.AreEqual("Unknown user", logger.Messages[0]);
         }
 
         [TestMethod]
@@ -267,11 +267,11 @@ namespace HawkNet.Owin.Tests
                            {
                                Credentials = (id) =>
                                {
-                                   return new HawkCredential
+                                   return Task.FromResult(new HawkCredential
                                    {
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
-                                   };
+                                   });
                                }
                            }
                         );
@@ -312,13 +312,13 @@ namespace HawkNet.Owin.Tests
                            {
                                Credentials = (id) =>
                                {
-                                   return new HawkCredential
+                                   return Task.FromResult(new HawkCredential
                                    {
                                        Id = "123",
                                        Algorithm = "hmac-sha-0",
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
-                                   };
+                                   });
                                }
                            }
                         );
@@ -359,13 +359,13 @@ namespace HawkNet.Owin.Tests
                            {
                                Credentials = (id) =>
                                {
-                                   return new HawkCredential
+                                   return Task.FromResult(new HawkCredential
                                    {
                                        Id = "123",
                                        Algorithm = "hmacsha256",
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
-                                   };
+                                   });
                                }
                            }
                         );
@@ -404,13 +404,13 @@ namespace HawkNet.Owin.Tests
                            {
                                Credentials = (id) =>
                                {
-                                   return new HawkCredential
+                                   return Task.FromResult(new HawkCredential
                                    {
                                        Id = "123",
                                        Algorithm = "hmac-sha-0",
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
-                                   };
+                                   });
                                }
                            }
                         );
@@ -449,13 +449,13 @@ namespace HawkNet.Owin.Tests
                            {
                                Credentials = (id) =>
                                {
-                                   return new HawkCredential
+                                   return Task.FromResult(new HawkCredential
                                    {
                                        Id = "123",
                                        Algorithm = "hmac-sha-0",
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
-                                   };
+                                   });
                                }
                            }
                         );
@@ -504,7 +504,7 @@ namespace HawkNet.Owin.Tests
                            builder,
                            new HawkAuthenticationOptions
                            {
-                               Credentials = (id) => credential
+                               Credentials = (id) => Task.FromResult(credential)
                            }
                         );
 
@@ -552,7 +552,7 @@ namespace HawkNet.Owin.Tests
                            builder,
                            new HawkAuthenticationOptions
                            {
-                               Credentials = (id) => credential
+                               Credentials = (id) => Task.FromResult(credential)
                            }
                         );
 
@@ -562,15 +562,15 @@ namespace HawkNet.Owin.Tests
             Assert.IsTrue(logger.Messages.Count == 0);
         }
 
-        private HawkCredential GetCredential(string id)
+        private Task<HawkCredential> GetCredential(string id)
         {
-            return new HawkCredential
+            return Task.FromResult(new HawkCredential
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 Algorithm = (id == "1" ? "hmacsha1" : "hmacsha256"),
                 User = "steve"
-            };
+            });
         }
 
         private void RegisterForOnSendingHeaders(Action<object> callback, object state)

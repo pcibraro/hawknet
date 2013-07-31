@@ -24,13 +24,13 @@ namespace Example.Owin
             {
                 Credentials = (id) =>
                 {
-                    return new HawkCredential
+                    return Task.FromResult(new HawkCredential
                     {
                         Id = "dh37fgj492je",
                         Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                         Algorithm = "hmacsha256",
                         User = "steve"
-                    };
+                    });
                 }
             });
             app.UseWebApi(config);

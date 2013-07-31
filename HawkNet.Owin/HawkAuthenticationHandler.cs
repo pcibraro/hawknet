@@ -27,7 +27,7 @@ namespace HawkNet.Owin
             this.logger = logger;
         }
 
-        protected override Task<AuthenticationTicket> AuthenticateCore()
+        protected override async Task<AuthenticationTicket> AuthenticateCore()
         {
             if (Request.Method.Equals("get", StringComparison.InvariantCultureIgnoreCase) &&
                 !string.IsNullOrEmpty(Request.Uri.Query))
@@ -39,7 +39,7 @@ namespace HawkNet.Owin
                         query["bewit"]));
                     try
                     {
-                        var principal = Hawk.AuthenticateBewit(query["bewit"],
+                        var principal = await Hawk.AuthenticateBewitAsync(query["bewit"],
                             Request.Host,
                             Request.Uri,
                             this.Options.Credentials);
@@ -47,14 +47,14 @@ namespace HawkNet.Owin
                         var identity = (ClaimsIdentity)((ClaimsPrincipal)principal).Identity;
                         var ticket = new AuthenticationTicket(identity, (AuthenticationExtra)null);
 
-                        return Task.FromResult(ticket);
+                        return ticket;
 
                     }
                     catch (SecurityException ex)
                     {
                         this.logger.WriteWarning("Unauthorized call. " + ex.Message);
                         
-                        return Task.FromResult(EmptyTicket());
+                        return EmptyTicket();
                     }
                 }
             }
@@ -72,7 +72,7 @@ namespace HawkNet.Owin
                  this.logger.WriteInformation(string.Format("Authorization skipped. Schema found {0}",
                          authorization.Scheme));
 
-                 return Task.FromResult(EmptyTicket());
+                 return EmptyTicket();
              }
 
             if (authorization == null ||
@@ -80,7 +80,7 @@ namespace HawkNet.Owin
             {
                 this.logger.WriteWarning("Authorization header not found");
 
-                return Task.FromResult(EmptyTicket());
+                return EmptyTicket();
             }
             else
             {
@@ -88,19 +88,19 @@ namespace HawkNet.Owin
                 {
                     this.logger.WriteWarning("Invalid header format");
                     
-                    return Task.FromResult(EmptyTicket());
+                    return EmptyTicket();
                 }
 
                 if (string.IsNullOrWhiteSpace(Request.Host))
                 {
                     this.logger.WriteWarning("Missing Host header");
                     
-                    return Task.FromResult(EmptyTicket());
+                    return EmptyTicket();
                 }
 
                 try
                 {
-                    var principal = Hawk.Authenticate(authorization.Parameter,
+                    var principal = await Hawk.AuthenticateAsync(authorization.Parameter,
                             Request.Host,
                             Request.Method,
                             Request.Uri,
@@ -109,13 +109,13 @@ namespace HawkNet.Owin
                     var identity = (ClaimsIdentity)((ClaimsPrincipal)principal).Identity;
                     var ticket = new AuthenticationTicket(identity, (AuthenticationExtra)null);
 
-                    return Task.FromResult(ticket);
+                    return ticket;
                 }
                 catch (SecurityException ex)
                 {
                     this.logger.WriteWarning(ex.Message);
 
-                    return Task.FromResult(EmptyTicket());
+                    return EmptyTicket();
                 }
             }
         }
