@@ -127,7 +127,7 @@ namespace HawkNet.Tests
                     User = "steve"
                 };
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now));
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
@@ -150,7 +150,7 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now));
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
@@ -178,7 +178,7 @@ namespace HawkNet.Tests
             var payload = Encoding.UTF8.GetBytes("Thank you for flying Hawk");
             var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
             
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now));
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header", hash);
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\", hash=\"{2}\"",
@@ -202,7 +202,7 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now.Subtract(TimeSpan.FromDays(1))) / 1000);
+            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now.Subtract(TimeSpan.FromHours(1))));
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",
@@ -223,7 +223,7 @@ namespace HawkNet.Tests
                 User = "steve"
             };
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now.Add(TimeSpan.FromDays(1))) / 1000);
+            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now.Add(TimeSpan.FromHours(1))));
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",

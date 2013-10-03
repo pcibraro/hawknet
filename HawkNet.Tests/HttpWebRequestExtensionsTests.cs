@@ -24,7 +24,7 @@ namespace HawkNet.Tests
 
             var date = DateTime.Now;
 
-            var ts = (int)Math.Floor(Hawk.ConvertToUnixTimestamp(date) / 1000);
+            var ts = (int)Math.Floor(Hawk.ConvertToUnixTimestamp(date));
             var mac = Hawk.CalculateMac("example.com:8080", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header");
 
             var authorization = string.Format("id=\"456\", ts=\"{0}\", nonce=\"k3j4h2\", mac=\"{1}\", ext=\"hello\"",

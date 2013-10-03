@@ -215,7 +215,7 @@ namespace HawkNet
             }
 
             var normalizedTs = ((int)Math.Floor((ConvertToUnixTimestamp((ts.HasValue) 
-                ? ts.Value : DateTime.UtcNow) / 1000))).ToString();
+                ? ts.Value : DateTime.UtcNow)))).ToString();
 
             var mac = CalculateMac(host, 
                 method, 
@@ -251,7 +251,7 @@ namespace HawkNet
         {
             var now = ConvertToUnixTimestamp(DateTime.Now);
 
-            var expiration = Math.Floor(now / 1000) + ttlSec;
+            var expiration = Math.Floor(now) + ttlSec;
 
             var mac = CalculateMac(host, "GET", uri, ext, expiration.ToString(), "", credential, "bewit");
 
@@ -444,7 +444,7 @@ namespace HawkNet
         }
 
         /// <summary>
-        /// Converts a Datatime to an equivalent Unix Timestamp
+        /// Converts a Datatime to an equivalent Unix Timestamp, in seconds
         /// </summary>
         /// <param name="date"></param>
         /// <returns></returns>
@@ -463,7 +463,7 @@ namespace HawkNet
                 var now = ConvertToUnixTimestamp(DateTime.Now);
 
                 // Check timestamp staleness
-                if (Math.Abs((parsedTs * 1000) - now) > (timestampSkewSec * 1000))
+                if (Math.Abs(parsedTs - now) > timestampSkewSec)
                 {
                     return false;
                 }
@@ -569,7 +569,7 @@ namespace HawkNet
 
             var now = ConvertToUnixTimestamp(DateTime.Now);
 
-            if (expiration * 1000 <= now)
+            if (expiration <= now)
             {
                 throw new SecurityException("Access expired");
             }
