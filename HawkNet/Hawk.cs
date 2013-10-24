@@ -52,16 +52,25 @@ namespace HawkNet
         /// <returns></returns>
         public static async Task<IPrincipal> AuthenticateAsync(string authorization, string host, string method, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
         {
-            TraceSource.TraceInformation(string.Format("Received Auth header: {0}",
-                authorization));
+            if (Trace.CorrelationManager.ActivityId == Guid.Empty)
+                Trace.CorrelationManager.ActivityId = Guid.NewGuid();
+
+            TraceSource.TraceInformation(string.Format("{0} - Received Auth header: {1}",
+                Trace.CorrelationManager.ActivityId, authorization));
 
             if (string.IsNullOrEmpty(authorization))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Authorization parameter can not be null or empty",
+                   Trace.CorrelationManager.ActivityId);
+
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
             }
 
             if (string.IsNullOrEmpty(host))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Host header can not be null or empty",
+                    Trace.CorrelationManager.ActivityId);
+
                 throw new ArgumentException("Host header can not be null or empty", "host");
             }
 
@@ -76,6 +85,9 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknown user",
+                    Trace.CorrelationManager.ActivityId);
+
                 throw new SecurityException("Unknown user", ex);
             }
 
@@ -97,6 +109,9 @@ namespace HawkNet
 
             if (!IsEqual(mac, attributes["mac"]))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad Mac. Received mac {1}. Calculated Mac {2}",
+                   Trace.CorrelationManager.ActivityId, attributes["mac"], mac);
+
                 throw new SecurityException("Bad mac");
             }
 
@@ -124,16 +139,25 @@ namespace HawkNet
         /// <returns></returns>
         public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
         {
-            TraceSource.TraceInformation(string.Format("Received Auth header: {0}",
-                authorization));
+            if (Trace.CorrelationManager.ActivityId == Guid.Empty)
+                Trace.CorrelationManager.ActivityId = Guid.NewGuid();
+
+            TraceSource.TraceInformation(string.Format("{0} - Received Auth header: {1}",
+                Trace.CorrelationManager.ActivityId, authorization));
             
             if (string.IsNullOrEmpty(authorization))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Authorization parameter can not be null or empty",
+                    Trace.CorrelationManager.ActivityId);
+                    
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
             }
 
             if (string.IsNullOrEmpty(host))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Host header can not be null or empty",
+                    Trace.CorrelationManager.ActivityId);
+
                 throw new ArgumentException("Host header can not be null or empty", "host");
             }
 
@@ -148,6 +172,9 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknown user",
+                    Trace.CorrelationManager.ActivityId);
+
                 throw new SecurityException("Unknown user", ex);
             }
 
@@ -169,6 +196,9 @@ namespace HawkNet
 
             if (!IsEqual(mac, attributes["mac"]))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad Mac. Received mac {1}. Calculated Mac {2}",
+                    Trace.CorrelationManager.ActivityId, attributes["mac"], mac);
+                
                 throw new SecurityException("Bad mac");
             }
 
@@ -273,6 +303,9 @@ namespace HawkNet
         /// <returns></returns>
         public static async Task<IPrincipal> AuthenticateBewitAsync(string bewit, string host, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60)
         {
+            if (Trace.CorrelationManager.ActivityId == Guid.Empty)
+                Trace.CorrelationManager.ActivityId = Guid.NewGuid();
+
             var bewitParts = ValidateBewit(bewit);
 
             HawkCredential credential = null;
@@ -282,6 +315,9 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknow user {1} in bewit",
+                    Trace.CorrelationManager.ActivityId, bewitParts[0]);
+
                 throw new SecurityException("Unknown user", ex);
             }
 
@@ -292,6 +328,9 @@ namespace HawkNet
 
             if (!IsEqual(mac, bewitParts[2]))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad mac in bewit. Received mac {1}. Calculated mac {2}",
+                    Trace.CorrelationManager.ActivityId, bewitParts[2], mac);
+
                 throw new SecurityException("Bad mac");
             }
 
@@ -316,6 +355,9 @@ namespace HawkNet
         /// <returns></returns>
         public static IPrincipal AuthenticateBewit(string bewit, string host, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
+            if (Trace.CorrelationManager.ActivityId == Guid.Empty)
+                Trace.CorrelationManager.ActivityId = Guid.NewGuid();
+
             var bewitParts = ValidateBewit(bewit);
 
             HawkCredential credential = null;
@@ -325,6 +367,9 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknow user {1} in bewit",
+                    Trace.CorrelationManager.ActivityId, bewitParts[0]);
+
                 throw new SecurityException("Unknown user", ex);
             }
 
@@ -335,6 +380,9 @@ namespace HawkNet
 
             if (!IsEqual(mac, bewitParts[2]))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad mac in bewit. Received mac {1}. Calculated mac {2}",
+                    Trace.CorrelationManager.ActivityId, bewitParts[2], mac);
+
                 throw new SecurityException("Bad mac");
             }
 
@@ -461,10 +509,15 @@ namespace HawkNet
             if(double.TryParse(ts, out parsedTs))
             {
                 var now = ConvertToUnixTimestamp(DateTime.Now);
+                var result = Math.Abs(parsedTs - now);
 
                 // Check timestamp staleness
-                if (Math.Abs(parsedTs - now) > timestampSkewSec)
+                if (result > timestampSkewSec)
                 {
+                    TraceSource.TraceData(TraceEventType.Warning, 0, 
+                        string.Format("{0} - Timestamp does not match. Current ts = {1}. Received ts = {2}. {3} exceeds the configured timestamp skew, which is {4}",
+                            Trace.CorrelationManager.ActivityId, now, parsedTs, result, timestampSkewSec));
+                    
                     return false;
                 }
                 else
@@ -502,11 +555,17 @@ namespace HawkNet
         {
             if (!RequiredAttributes.All(a => attributes.AllKeys.Any(k => k == a)))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, 
+                    string.Format("{0} - Missing attributes", Trace.CorrelationManager.ActivityId));
+
                 throw new SecurityException("Missing attributes");
             }
 
             if (!attributes.AllKeys.All(a => SupportedAttributes.Any(k => k == a)))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0, 
+                    string.Format("{0} - Unknown attributes", Trace.CorrelationManager.ActivityId));
+
                 throw new SecurityException("Unknown attributes");
             }
 
@@ -547,6 +606,10 @@ namespace HawkNet
 
             if (receivedHash != hash)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0,
+                   string.Format("{0} - Bad payload hash. Received hash {1}. Calculated hash {2}", 
+                    Trace.CorrelationManager.ActivityId, receivedHash, hash));
+
                 throw new SecurityException("Bad payload hash");
             }
         }
@@ -558,12 +621,20 @@ namespace HawkNet
             var bewitParts = decodedBewit.Split('\\');
             if (bewitParts.Length != 4)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0,
+                   string.Format("{0} - Invalid bewit structure. Received bewit {1}",
+                    Trace.CorrelationManager.ActivityId, decodedBewit));
+
                 throw new SecurityException("Invalid bewit structure");
             }
 
             double expiration;
             if (!double.TryParse(bewitParts[1], out expiration))
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0,
+                   string.Format("{0} - Invalid expiration in bewit structure",
+                    Trace.CorrelationManager.ActivityId));
+
                 throw new SecurityException("Invalid expiration in bewit structure");
             }
 
@@ -571,6 +642,10 @@ namespace HawkNet
 
             if (expiration <= now)
             {
+                TraceSource.TraceData(TraceEventType.Warning, 0,
+                   string.Format("{0} - Access expired - Now {1}. Expiration {2}",
+                    Trace.CorrelationManager.ActivityId, now, expiration));
+
                 throw new SecurityException("Access expired");
             }
             return bewitParts;
