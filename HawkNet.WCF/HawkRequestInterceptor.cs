@@ -1,10 +1,12 @@
 ﻿using Microsoft.ServiceModel.Web;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IdentityModel.Claims;
 using System.IdentityModel.Policy;
 using System.Linq;
 using System.Net;
+using System.Security;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -17,6 +19,8 @@ namespace HawkNet.WCF
     public class HawkRequestInterceptor : RequestInterceptor
     {
         const string HawkScheme = "Hawk";
+
+        static TraceSource TraceSource = new TraceSource("HawkNet.WCF");
 
         Func<string, HawkCredential> credentials;
         bool sendChallenge;
@@ -33,28 +37,48 @@ namespace HawkNet.WCF
 
         public override void ProcessRequest(ref System.ServiceModel.Channels.RequestContext requestContext)
         {
+            if (Trace.CorrelationManager.ActivityId == Guid.Empty)
+                Trace.CorrelationManager.ActivityId = Guid.NewGuid();
+
             var request = requestContext.RequestMessage;
             
             if (endpointFilter == null || endpointFilter(request))
             {
-                IPrincipal principal = ExtractCredentials(request);
-                if (principal != null)
+                try
                 {
-                    InitializeSecurityContext(request, principal);
-                }
-                else
-                {
-                    var reply = Message.CreateMessage(MessageVersion.None, null);
-                    var responseProperty = new HttpResponseMessageProperty() { StatusCode = HttpStatusCode.Unauthorized };
-
-                    if (sendChallenge)
+                    IPrincipal principal = ExtractCredentials(request);
+                    if (principal != null)
                     {
-                        var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
-                        var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
-                            ts, "pool.ntp.org");
-
-                        responseProperty.Headers.Add("WWW-Authenticate", challenge);
+                        InitializeSecurityContext(request, principal);
                     }
+                    else
+                    {
+                        var reply = Message.CreateMessage(MessageVersion.None, null);
+                        var responseProperty = new HttpResponseMessageProperty() { StatusCode = HttpStatusCode.Unauthorized };
+
+                        if (sendChallenge)
+                        {
+                            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
+                            var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
+                                ts, "pool.ntp.org");
+
+                            responseProperty.Headers.Add("WWW-Authenticate", challenge);
+                        }
+
+                        reply.Properties[HttpResponseMessageProperty.Name] = responseProperty;
+                        requestContext.Reply(reply);
+
+                        requestContext = null;
+                    }
+                }
+                catch (SecurityException ex)
+                {
+                    TraceSource.TraceData(TraceEventType.Error, 0,
+                        string.Format("{0} - Security Exception {1}",
+                            Trace.CorrelationManager.ActivityId, ex.ToString()));
+
+                    var reply = Message.CreateMessage(MessageVersion.None, null, (object)ex.Message);
+                    var responseProperty = new HttpResponseMessageProperty() { StatusCode = HttpStatusCode.Unauthorized };
 
                     reply.Properties[HttpResponseMessageProperty.Name] = responseProperty;
                     requestContext.Reply(reply);
@@ -74,6 +98,9 @@ namespace HawkNet.WCF
             {
                 var hawk = authHeader.Substring(HawkScheme.Length).Trim();
 
+                TraceSource.TraceInformation(string.Format("{0} - Received Auth header: {1}",
+                    Trace.CorrelationManager.ActivityId, hawk));
+
                 var principal = Hawk.Authenticate(hawk,
                     request.Headers["host"],
                     request.Method,
@@ -81,6 +108,7 @@ namespace HawkNet.WCF
                     this.credentials);
 
                 return principal;
+                
             }
 
             return null;

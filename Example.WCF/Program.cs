@@ -59,27 +59,43 @@ namespace Example.WCF
             var hawk = Hawk.GetAuthorizationHeader("localhost:8090",
                 "GET",
                 requestUri,
-                credential);
+                new HawkCredential
+                {
+                    Algorithm = "hmacsha256",
+                    Key = "foo"
+                });
 
             request.Headers.Add("Authorization", "Hawk " + hawk);
             
-            var response = (HttpWebResponse)request.GetResponse();
-
-            if (response.StatusCode == HttpStatusCode.OK)
+            try
             {
+                var response = (HttpWebResponse)request.GetResponse();
+            
                 using (var sr = new StreamReader(response.GetResponseStream()))
                 {
                     var content = sr.ReadToEnd();
 
                     Console.WriteLine("Received " + content);
                 }
+
+                response.Close();
+            
             }
-            else
+            catch(WebException ex)
             {
-                Console.WriteLine("Http Status code " + response.StatusCode);
+                var response = ((HttpWebResponse)ex.Response);
+
+                using (var sr = new StreamReader(response.GetResponseStream()))
+                {
+                    var content = sr.ReadToEnd();
+
+                    Console.WriteLine("Received " + content);
+                }
+
+                response.Close();
             }
 
-            response.Close();
+            
         }
     }
 }
