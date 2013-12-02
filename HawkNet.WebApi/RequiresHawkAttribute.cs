@@ -29,6 +29,7 @@ namespace HawkNet.WebApi
         
         Func<string, HawkCredential> credentials;
         Predicate<HttpRequestMessage> endpointFilter;
+        int timeskewInSeconds = 60;
 
         /// <summary>
         /// Creates a new instance of HawkActionFilter using a type for
@@ -69,7 +70,7 @@ namespace HawkNet.WebApi
             this.credentials = (id) => repository.Get(id);
         }
 
-        public RequiresHawkAttribute(Func<string, HawkCredential> credentials, Predicate<HttpRequestMessage> endpointFilter = null)
+        public RequiresHawkAttribute(Func<string, HawkCredential> credentials, Predicate<HttpRequestMessage> endpointFilter = null, int timeskewInSeconds = 60)
             : base()
         {
             if (credentials == null)
@@ -77,6 +78,7 @@ namespace HawkNet.WebApi
 
             this.credentials = credentials;
             this.endpointFilter = endpointFilter;
+            this.timeskewInSeconds = timeskewInSeconds;
         }
 
         public override void OnAuthorization(System.Web.Http.Controllers.HttpActionContext actionContext)
@@ -100,7 +102,7 @@ namespace HawkNet.WebApi
                             query["bewit"]));
                         try
                         {
-                            principal = request.Authenticate(credentials);
+                            principal = request.Authenticate(credentials, this.timeskewInSeconds);
                         }
                         catch (SecurityException ex)
                         {

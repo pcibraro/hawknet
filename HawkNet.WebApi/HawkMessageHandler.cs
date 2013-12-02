@@ -28,23 +28,26 @@ namespace HawkNet.WebApi
         const string Scheme = "Hawk";
         
         Func<string, HawkCredential> credentials;
+        int timeskewInSeconds = 60;
 
-        public HawkMessageHandler(Func<string, HawkCredential> credentials)
+        public HawkMessageHandler(Func<string, HawkCredential> credentials, int timeskewInSeconds = 60)
             : base()
         {
             if (credentials == null)
                 throw new ArgumentNullException("credentials");
 
             this.credentials = credentials;
+            this.timeskewInSeconds = timeskewInSeconds;
         }
 
-        public HawkMessageHandler(HttpMessageHandler innerHandler, Func<string, HawkCredential> credentials)
+        public HawkMessageHandler(HttpMessageHandler innerHandler, Func<string, HawkCredential> credentials, int timeskewInSeconds = 60)
             : base(innerHandler)
         {
             if (credentials == null)
                 throw new ArgumentNullException("credentials");
 
             this.credentials = credentials;
+            this.timeskewInSeconds = timeskewInSeconds;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
@@ -62,7 +65,7 @@ namespace HawkNet.WebApi
                         query["bewit"]));
                     try
                     {
-                        principal = request.Authenticate(credentials);
+                        principal = request.Authenticate(credentials, this.timeskewInSeconds);
 
                     }
                     catch (SecurityException ex)
