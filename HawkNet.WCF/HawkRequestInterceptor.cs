@@ -25,14 +25,17 @@ namespace HawkNet.WCF
         Func<string, HawkCredential> credentials;
         bool sendChallenge;
         Predicate<Message> endpointFilter;
+        int timeskewInSeconds = 60;
 
         public HawkRequestInterceptor(Func<string, HawkCredential> credentials, bool sendChallenge = true,
-            Predicate<Message> endpointFilter = null)
+            Predicate<Message> endpointFilter = null,
+            int timeskewInSeconds = 60)
             : base(false)
         {
             this.credentials = credentials;
             this.sendChallenge = sendChallenge;
-            this.endpointFilter = endpointFilter; 
+            this.endpointFilter = endpointFilter;
+            this.timeskewInSeconds = timeskewInSeconds;
         }
 
         public override void ProcessRequest(ref System.ServiceModel.Channels.RequestContext requestContext)
@@ -105,7 +108,8 @@ namespace HawkNet.WCF
                     request.Headers["host"],
                     request.Method,
                     requestMessage.Properties.Via,
-                    this.credentials);
+                    this.credentials,
+                    this.timeskewInSeconds);
 
                 return principal;
                 
