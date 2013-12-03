@@ -122,7 +122,7 @@ namespace HawkNet.WebApi
 
                 try
                 {
-                    principal = request.Authenticate(credentials);
+                    principal = request.Authenticate(credentials, this.timeskewInSeconds);
 
                 }
                 catch (SecurityException ex)
