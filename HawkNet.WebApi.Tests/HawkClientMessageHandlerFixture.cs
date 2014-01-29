@@ -74,7 +74,7 @@ namespace HawkNet.Tests
             var nonce = "123456";
 
             var date = DateTime.UtcNow;
-            var ts = ((int)(Math.Floor(Hawk.ConvertToUnixTimestamp(date) / 1000))).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(date).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
                 credential, "hello", date, nonce);
@@ -117,7 +117,7 @@ namespace HawkNet.Tests
             var nonce = Hawk.GetRandomString(6);
 
             var date = DateTime.UtcNow;
-            var ts = ((int)(Math.Floor(Hawk.ConvertToUnixTimestamp(date) / 1000))).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(date).ToString();
 
             var handler = new HawkClientMessageHandler(new DummyHttpMessageHandler(),
                 credential, "hello", date, nonce, true);

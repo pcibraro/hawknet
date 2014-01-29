@@ -156,7 +156,7 @@ namespace HawkNet.ServiceStack.Tests
         {
             var filter = new HawkRequestFilter((id) => { throw new Exception("Invalid"); });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var headers = new NameValueCollection();
 
@@ -181,7 +181,7 @@ namespace HawkNet.ServiceStack.Tests
         {
             var filter = new HawkRequestFilter((id) => { return null; });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var headers = new NameValueCollection();
 
@@ -213,7 +213,7 @@ namespace HawkNet.ServiceStack.Tests
                 };
             });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var headers = new NameValueCollection();
 
@@ -247,7 +247,7 @@ namespace HawkNet.ServiceStack.Tests
                 };
             });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var headers = new NameValueCollection();
 
@@ -281,7 +281,7 @@ namespace HawkNet.ServiceStack.Tests
                 };
             });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var headers = new NameValueCollection();
 
@@ -315,7 +315,7 @@ namespace HawkNet.ServiceStack.Tests
                 };
             });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var headers = new NameValueCollection();
 
@@ -350,7 +350,7 @@ namespace HawkNet.ServiceStack.Tests
                 return credential;
             });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
             var headers = new NameValueCollection();
@@ -386,7 +386,7 @@ namespace HawkNet.ServiceStack.Tests
                 return credential;
             });
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
             var headers = new NameValueCollection();

@@ -75,12 +75,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HawkNet.ServiceStack\HawkNet.ServiceStack.csproj">
-      <Project>{3267c0a6-e899-421a-9e90-56b6ccac49e4}</Project>
-      <Name>HawkNet.ServiceStack</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

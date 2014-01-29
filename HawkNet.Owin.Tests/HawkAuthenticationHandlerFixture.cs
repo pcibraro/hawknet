@@ -170,7 +170,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -210,7 +210,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -249,7 +249,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -295,7 +295,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -343,7 +343,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -391,7 +391,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -437,7 +437,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var context = new OwinContext();
             var request = (OwinRequest)context.Request;
@@ -491,7 +491,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
             var context = new OwinContext();
@@ -540,7 +540,7 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
             var context = new OwinContext();

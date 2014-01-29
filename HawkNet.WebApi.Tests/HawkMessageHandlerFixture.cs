@@ -105,7 +105,7 @@ namespace HawkNet.Tests
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => { throw new Exception("Invalid"); });
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
@@ -124,7 +124,7 @@ namespace HawkNet.Tests
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => { return null; });
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
@@ -151,7 +151,7 @@ namespace HawkNet.Tests
 
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
@@ -180,7 +180,7 @@ namespace HawkNet.Tests
 
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
@@ -209,7 +209,7 @@ namespace HawkNet.Tests
 
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"/qwS4UjfVWMcU4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\"");
@@ -292,7 +292,7 @@ namespace HawkNet.Tests
 
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
@@ -326,7 +326,7 @@ namespace HawkNet.Tests
 
             var invoker = new HttpMessageInvoker(handler);
 
-            var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");

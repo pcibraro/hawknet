@@ -5,10 +5,10 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.SelfHost;
 using HawkNet;
 using HawkNet.WebApi;
 using System.Web.Http.Dispatcher;
+using Microsoft.Owin.Hosting;
 
 namespace Example
 {
@@ -16,42 +16,14 @@ namespace Example
     {
         static void Main(string[] args)
         {
-            var config = new HttpSelfHostConfiguration("http://localhost:8091");
-            //config.Filters.Add(new RequiresHawkAttribute(typeof(HawkRepository)));
+            string baseAddress = "http://localhost:8091/";
 
-            var handler = new HawkMessageHandler(new HttpControllerDispatcher(config),
-                (id) =>
-                {
-                    return new HawkCredential
-                    {
-                        Id = id,
-                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                        Algorithm = "hmacsha256",
-                        User = "steve"
-                    };
-                });
+            //TODO: It looks like there is a bug in the OWIN implementation. The Request URL does not receive
+            // the port number
 
-            config.Routes.MapHttpRoute(
-                "Filter", "api/filter",
-                new
-                {
-                    controller = "HelloWorldWithFilter"
-                });
-
-            config.Routes.MapHttpRoute(
-                "API Default", "api/{controller}/{id}",
-                new
-                {
-                    id = RouteParameter.Optional,
-                    controller = "HelloWorld"
-                },
-                null,
-                handler
-                );
-
-            using (HttpSelfHostServer server = new HttpSelfHostServer(config))
+            // Start OWIN host 
+            using (WebApp.Start<Startup>(url: baseAddress))
             {
-                server.OpenAsync().Wait();
                 Console.WriteLine("Press Enter to quit.");
 
                 var credential = new HawkCredential
@@ -73,7 +45,7 @@ namespace Example
                 Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
 
                 var client2 = new HttpClient();
-                
+
                 request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/Api/HelloWorldAnonymous");
                 request.Headers.Host = "localhost";
 
@@ -89,7 +61,7 @@ namespace Example
                 request.Headers.Host = "localhost";
 
                 response = client3.SendAsync(request).Result;
-                
+
                 message = response.Content.ReadAsStringAsync().Result;
                 Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
 
@@ -142,7 +114,7 @@ namespace Example
         }
     }
 
-    
+
     public class HelloWorldWithFilterController : ApiController
     {
         [RequiresHawkAttribute(typeof(HawkRepository))]
