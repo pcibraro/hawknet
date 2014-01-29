@@ -27,13 +27,14 @@ namespace HawkNet.Owin.Tests
         {
             var builder = new AppBuilderFactory().Create();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            OwinRequest request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
             request.SetHeader("Authorization", new string[] { "Basic " });
 
-            var response = new OwinResponse(request);
+            var response = context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                 new AppFuncTransition((env) => 
@@ -48,7 +49,7 @@ namespace HawkNet.Owin.Tests
                 }
             );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.IsNotNull(response);
             Assert.AreEqual(200, response.StatusCode);
@@ -60,15 +61,15 @@ namespace HawkNet.Owin.Tests
             var logger = new Logger();
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
-
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "ts = \"1353788437\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
             response.StatusCode = 401;
 
             var middleware = new HawkAuthenticationMiddleware(
@@ -84,7 +85,7 @@ namespace HawkNet.Owin.Tests
                 }
             );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Missing attributes", logger.Messages[0]);
@@ -97,14 +98,15 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "id = \"123\", ts = \"1353788437\", nonce = \"1353788437\", x = \"3\", mac = \"/qwS4UjfVWMcUyW6EEgUH4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse) context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                  new AppFuncTransition((env) =>
@@ -119,7 +121,7 @@ namespace HawkNet.Owin.Tests
                 }
             );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Unknown attributes", logger.Messages[0]);
@@ -132,14 +134,15 @@ namespace HawkNet.Owin.Tests
             var builder = new AppBuilderFactory().Create();
             builder.SetLoggerFactory(new LoggerFactory(logger));
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 ""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                 new AppFuncTransition((env) =>
@@ -154,7 +157,7 @@ namespace HawkNet.Owin.Tests
                }
             );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Invalid header format", logger.Messages[0]);
@@ -169,7 +172,8 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
@@ -177,7 +181,7 @@ namespace HawkNet.Owin.Tests
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                 new AppFuncTransition((env) =>
@@ -192,7 +196,7 @@ namespace HawkNet.Owin.Tests
                }
             );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Unknown user", logger.Messages[0]);
@@ -208,7 +212,8 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
@@ -216,7 +221,7 @@ namespace HawkNet.Owin.Tests
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -231,7 +236,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Unknown user", logger.Messages[0]);
@@ -246,7 +251,8 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
@@ -254,7 +260,7 @@ namespace HawkNet.Owin.Tests
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -276,7 +282,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Invalid credentials", logger.Messages[0]);
@@ -291,7 +297,8 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
@@ -299,7 +306,7 @@ namespace HawkNet.Owin.Tests
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -323,7 +330,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Unknown algorithm", logger.Messages[0]);
@@ -338,7 +345,8 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
@@ -346,7 +354,7 @@ namespace HawkNet.Owin.Tests
             request.SetHeader("Authorization", new string[] { "Hawk " + 
                 "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"/qwS4UjfVWMcU4jlr7T/wuKe3dKijvTvSos=\", ext = \"hello\""});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -370,7 +378,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.AreEqual("Bad mac", logger.Messages[0]);
@@ -385,13 +393,14 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
             request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -415,7 +424,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(200, response.StatusCode);
             Assert.AreEqual(0, ((IDictionary<string, string[]>)response.Environment["owin.ResponseHeaders"]).Count);
@@ -430,13 +439,14 @@ namespace HawkNet.Owin.Tests
 
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000).ToString();
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "localhost" });
             request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -460,7 +470,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(401, response.StatusCode);
             Assert.IsNotNull(((IDictionary<string, string[]>)response.Environment["owin.ResponseHeaders"])["WWW-Authenticate"]);
@@ -484,7 +494,8 @@ namespace HawkNet.Owin.Tests
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "example.com" });
@@ -493,7 +504,7 @@ namespace HawkNet.Owin.Tests
                 string.Format("id = \"456\", ts = \"{0}\", nonce=\"j4h3g2\", mac = \"{1}\", ext = \"hello\"",
                 ts, mac)});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -508,7 +519,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(200, response.StatusCode);
             Assert.IsTrue(logger.Messages.Count == 0);
@@ -532,7 +543,8 @@ namespace HawkNet.Owin.Tests
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now) / 1000);
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
 
-            var request = OwinRequest.Create();
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
             request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
             request.Method = "get";
             request.SetHeader("Host", new string[] { "example.com" });
@@ -541,7 +553,7 @@ namespace HawkNet.Owin.Tests
                 string.Format("id = \"456\", ts = \"{0}\", nonce=\"j4h3g2\", mac = \"{1}\", ext = \"hello\"",
                 ts, mac)});
 
-            var response = new OwinResponse(request);
+            var response = (OwinResponse)context.Response;
 
             var middleware = new HawkAuthenticationMiddleware(
                             new AppFuncTransition((env) =>
@@ -556,7 +568,7 @@ namespace HawkNet.Owin.Tests
                            }
                         );
 
-            middleware.Invoke(request, response);
+            middleware.Invoke(context);
 
             Assert.AreEqual(200, response.StatusCode);
             Assert.IsTrue(logger.Messages.Count == 0);
@@ -611,12 +623,12 @@ namespace HawkNet.Owin.Tests
     {
         public static void SetUri(this OwinRequest request, Uri uri, bool ignoreHost = false)
         {
-            request.QueryString = (!string.IsNullOrWhiteSpace(uri.Query)) ? uri.Query.Substring(1) : "";
+            request.QueryString = new QueryString((!string.IsNullOrWhiteSpace(uri.Query)) ? uri.Query.Substring(1) : "");
             request.Scheme = uri.Scheme;
             if (!ignoreHost)
-                request.Host = uri.Host + ":" + uri.Port;
-            request.PathBase = "";
-            request.Path = uri.PathAndQuery.Replace(uri.Query, "");
+                request.Host = new HostString(uri.Host + ":" + uri.Port);
+            request.PathBase = new PathString("");
+            request.Path = new PathString(uri.PathAndQuery.Replace(uri.Query, ""));
         }
 
         public static void SetHeader(this OwinRequest request, string name, string[] values)
