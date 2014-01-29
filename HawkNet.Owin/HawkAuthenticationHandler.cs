@@ -15,6 +15,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Microsoft.Owin;
 
 namespace HawkNet.Owin
 {
@@ -27,7 +28,7 @@ namespace HawkNet.Owin
             this.logger = logger;
         }
 
-        protected override async Task<AuthenticationTicket> AuthenticateCore()
+        protected override async Task<AuthenticationTicket> AuthenticateCoreAsync()
         {
             if (Request.Method.Equals("get", StringComparison.InvariantCultureIgnoreCase) &&
                 !string.IsNullOrEmpty(Request.Uri.Query))
@@ -40,12 +41,12 @@ namespace HawkNet.Owin
                     try
                     {
                         var principal = await Hawk.AuthenticateBewitAsync(query["bewit"],
-                            Request.Host,
+                            Request.Host.Value,
                             Request.Uri,
                             this.Options.Credentials);
 
                         var identity = (ClaimsIdentity)((ClaimsPrincipal)principal).Identity;
-                        var ticket = new AuthenticationTicket(identity, (AuthenticationExtra)null);
+                        var ticket = new AuthenticationTicket(identity, null);
 
                         return ticket;
 
@@ -61,9 +62,9 @@ namespace HawkNet.Owin
 
             AuthenticationHeaderValue authorization = null;
 
-            if (Request.GetHeader("authorization") != null)
+            if (Request.Headers.ContainsKey("authorization"))
             {
-                authorization = AuthenticationHeaderValue.Parse(Request.GetHeader("authorization"));
+                authorization = AuthenticationHeaderValue.Parse(Request.Headers["authorization"]);
             }
 
              if (authorization != null &&
@@ -91,7 +92,7 @@ namespace HawkNet.Owin
                     return EmptyTicket();
                 }
 
-                if (string.IsNullOrWhiteSpace(Request.Host))
+                if (string.IsNullOrWhiteSpace(Request.Host.Value))
                 {
                     this.logger.WriteWarning("Missing Host header");
                     
@@ -101,13 +102,13 @@ namespace HawkNet.Owin
                 try
                 {
                     var principal = await Hawk.AuthenticateAsync(authorization.Parameter,
-                            Request.Host,
+                            Request.Host.Value,
                             Request.Method,
                             Request.Uri,
                             this.Options.Credentials);
 
                     var identity = (ClaimsIdentity)((ClaimsPrincipal)principal).Identity;
-                    var ticket = new AuthenticationTicket(identity, (AuthenticationExtra)null);
+                    var ticket = new AuthenticationTicket(identity, null);
 
                     return ticket;
                 }
@@ -120,7 +121,7 @@ namespace HawkNet.Owin
             }
         }
 
-        protected override Task ApplyResponseChallenge()
+        protected override Task ApplyResponseChallengeAsync()
         {
             if (Response.StatusCode != 401)
             {
@@ -131,14 +132,14 @@ namespace HawkNet.Owin
             var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
                     ts, "pool.ntp.org");
 
-            Response.AddHeader("WWW-Authenticate", HawkAuthenticationOptions.Scheme + " " + challenge);
+            Response.Headers.Append("WWW-Authenticate", HawkAuthenticationOptions.Scheme + " " + challenge);
             
             return Task.FromResult<object>(null);
         }
 
         private static AuthenticationTicket EmptyTicket()
         {
-            return new AuthenticationTicket(null, (AuthenticationExtra)null);
+            return new AuthenticationTicket(null, null);
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Owin.Extensions;
 
 namespace HawkNet.Owin
 {
@@ -12,7 +13,7 @@ namespace HawkNet.Owin
         public static IAppBuilder UseHawkAuthentication(this IAppBuilder app, HawkAuthenticationOptions options)
         {
             app.Use(typeof(HawkAuthenticationMiddleware), app, options);
-            app.UseStageMarkerAuthenticate();
+            app.UseStageMarker(PipelineStage.Authenticate);
             return app;
         }
     }
