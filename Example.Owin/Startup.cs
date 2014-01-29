@@ -15,8 +15,6 @@ namespace Example.Owin
     {
         public void Configuration(IAppBuilder app)
         {
-            app.SetLoggerFactory(new ConsoleLoggerFactory());
-
             var config = new HttpConfiguration();
             config.Routes.MapHttpRoute("Default", "api/{controller}");
             
