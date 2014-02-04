@@ -74,6 +74,7 @@ namespace HawkNet
                 return payload;
             };
 
+
             return Hawk.Authenticate(request.Headers.Authorization.Parameter,
                 request.Headers.Host,
                 request.Method.ToString(),

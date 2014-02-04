@@ -29,8 +29,11 @@ namespace HawkNet.WebApi
         
         Func<string, HawkCredential> credentials;
         int timeskewInSeconds = 60;
+        bool includeServerAuthorization;
 
-        public HawkMessageHandler(Func<string, HawkCredential> credentials, int timeskewInSeconds = 60)
+        public HawkMessageHandler(Func<string, HawkCredential> credentials, 
+            int timeskewInSeconds = 60, 
+            bool includeServerAuthorization = false)
             : base()
         {
             if (credentials == null)
@@ -38,9 +41,13 @@ namespace HawkNet.WebApi
 
             this.credentials = credentials;
             this.timeskewInSeconds = timeskewInSeconds;
+            this.includeServerAuthorization = includeServerAuthorization;
         }
 
-        public HawkMessageHandler(HttpMessageHandler innerHandler, Func<string, HawkCredential> credentials, int timeskewInSeconds = 60)
+        public HawkMessageHandler(HttpMessageHandler innerHandler, 
+            Func<string, HawkCredential> credentials, 
+            int timeskewInSeconds = 60,
+            bool includeServerAuthorization = false)
             : base(innerHandler)
         {
             if (credentials == null)
@@ -48,9 +55,10 @@ namespace HawkNet.WebApi
 
             this.credentials = credentials;
             this.timeskewInSeconds = timeskewInSeconds;
+            this.includeServerAuthorization = includeServerAuthorization;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
             IPrincipal principal = null;
 
@@ -66,7 +74,6 @@ namespace HawkNet.WebApi
                     try
                     {
                         principal = request.Authenticate(credentials, this.timeskewInSeconds);
-
                     }
                     catch (SecurityException ex)
                     {
@@ -79,7 +86,22 @@ namespace HawkNet.WebApi
                         HttpContext.Current.User = principal;
                     }
 
-                    return base.SendAsync(request, cancellationToken);
+                    return await base.SendAsync(request, cancellationToken);
+
+                    //base.SendAsync(request, cancellationToken).ContinueWith<HttpResponseMessage>((response) =>
+                    //    {
+                    //        if(this.includeServerAuthorization)
+                    //        {
+                    //            return AuthenticateResponse(request.Headers.Authorization.Parameter,
+                    //                request.Headers.Host,
+                    //                request.Method.ToString(),
+                    //                request.RequestUri,
+                    //                credentials,
+                    //                response);
+
+
+                    //        }
+                    //    };
                 }
             }
             
@@ -89,7 +111,7 @@ namespace HawkNet.WebApi
                 TraceSource.TraceInformation(string.Format("Authorization skipped. Schema found {0}",
                         request.Headers.Authorization.Scheme));
 
-                return base.SendAsync(request, cancellationToken);
+                return await base.SendAsync(request, cancellationToken);
             }
 
             if (request.Headers.Authorization == null ||
@@ -97,19 +119,19 @@ namespace HawkNet.WebApi
             {
                 TraceSource.TraceInformation("Authorization header not found");
 
-                return base.SendAsync(request, cancellationToken).ContinueWith<HttpResponseMessage>(r =>
-                    {
-                        if (r.Result.StatusCode == HttpStatusCode.Unauthorized)
-                        {
-                            return ChallengeResponse(request);
-                        }
+                var response = await base.SendAsync(request, cancellationToken);
 
-                        return r.Result;
-                    });
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    return ChallengeResponse(request);
+                }
+                else
+                {
+                    return response;
+                }
             }
             else
             {
-
                 if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
                 {
                     return ToResponse(request, HttpStatusCode.BadRequest, "Invalid header format");
@@ -138,7 +160,7 @@ namespace HawkNet.WebApi
                     HttpContext.Current.User = principal;
                 }
 
-                return base.SendAsync(request, cancellationToken);
+                return await base.SendAsync(request, cancellationToken);
             }
         }
 
@@ -154,17 +176,46 @@ namespace HawkNet.WebApi
             return response;
         }
 
-        private static Task<HttpResponseMessage> ToResponse(HttpRequestMessage request, HttpStatusCode code, string message)
+        private static HttpResponseMessage ToResponse(HttpRequestMessage request, HttpStatusCode code, string message)
         {
-            var tsc = new TaskCompletionSource<HttpResponseMessage>();
-
             var response = request.CreateResponse(code);
             response.ReasonPhrase = message;
             response.Content = new StringContent(message);
-            
-            tsc.SetResult(response);
 
-            return tsc.Task;
+            return response;
         }
+
+        private static Task<HttpResponseMessage> AuthenticateResponse(string authorization,
+            string host, 
+            string method,
+            Uri uri,
+            Func<string, HawkCredential> credentials,
+            HttpResponseMessage response)
+        {
+            var id = Hawk.ParseAttributes(authorization)["id"];
+            var credential = credentials(id);
+
+            var task = response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            var payload = task.GetAwaiter().GetResult();
+
+            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
+            var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
+
+            var serverAuthorization = Hawk.GetAuthorizationHeader(host,
+                method,
+                uri,
+                credential,
+                null,
+                null,
+                null,
+                hash);
+
+            response.Headers.Add("Server-Authorization", serverAuthorization);
+
+            return Task.FromResult(response);
+            
+        }
+
     }
 }
