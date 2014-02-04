@@ -50,7 +50,7 @@ namespace HawkNet
         /// <param name="timestampSkewSec">Accepted Time skew for timestamp verification</param>
         /// <param name="payloadHash">Hash of the request payload</param>
         /// <returns></returns>
-        public static async Task<IPrincipal> AuthenticateAsync(string authorization, string host, string method, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
+        public static async Task<IPrincipal> AuthenticateAsync(string authorization, string host, string method, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60, Func<Task<byte[]>> requestPayload = null)
         {
             if (Trace.CorrelationManager.ActivityId == Guid.Empty)
                 Trace.CorrelationManager.ActivityId = Guid.NewGuid();
@@ -95,7 +95,16 @@ namespace HawkNet
 
             if (!string.IsNullOrEmpty(attributes["hash"]))
             {
-                ValidatePayload(credential, attributes["hash"], requestPayload);
+                var hash = GeneratePayloadHash(await requestPayload(), credential);
+
+                if (attributes["hash"] != hash)
+                {
+                    TraceSource.TraceData(TraceEventType.Warning, 0,
+                       string.Format("{0} - Bad payload hash. Received hash {1}. Calculated hash {2}",
+                        Trace.CorrelationManager.ActivityId, attributes["hash"], hash));
+
+                    throw new SecurityException("Bad payload hash");
+                }
             }
 
             var mac = CalculateMac(host,
@@ -182,7 +191,16 @@ namespace HawkNet
 
             if (!string.IsNullOrEmpty(attributes["hash"]))
             {
-                ValidatePayload(credential, attributes["hash"], requestPayload);
+                var hash = GeneratePayloadHash(requestPayload(), credential);
+
+                if (attributes["hash"] != hash)
+                {
+                    TraceSource.TraceData(TraceEventType.Warning, 0,
+                       string.Format("{0} - Bad payload hash. Received hash {1}. Calculated hash {2}",
+                        Trace.CorrelationManager.ActivityId, attributes["hash"], hash));
+
+                    throw new SecurityException("Bad payload hash");
+                }
             }
 
             var mac = CalculateMac(host, 
@@ -503,6 +521,23 @@ namespace HawkNet
             return Math.Floor(diff.TotalSeconds);
         }
 
+        /// <summary>
+        /// Generates a mac hash using the supplied payload and credentials
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="credential"></param>
+        /// <returns></returns>
+        public static string GeneratePayloadHash(byte[] payload, HawkCredential credential)
+        {
+            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+
+            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
+
+            var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
+
+            return hash;
+        }
+
         private static bool CheckTimestamp(string ts, int timestampSkewSec)
         {
             double parsedTs;
@@ -593,24 +628,6 @@ namespace HawkNet
                 string.Equals(a, credential.Algorithm, StringComparison.InvariantCultureIgnoreCase)))
             {
                 throw new SecurityException("Unknown algorithm");
-            }
-        }
-
-        private static void ValidatePayload(HawkCredential credential, string receivedHash, Func<byte[]> requestPayload)
-        {
-            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
-
-            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
-
-            var hash = Convert.ToBase64String(hmac.ComputeHash(requestPayload()));
-
-            if (receivedHash != hash)
-            {
-                TraceSource.TraceData(TraceEventType.Warning, 0,
-                   string.Format("{0} - Bad payload hash. Received hash {1}. Calculated hash {2}", 
-                    Trace.CorrelationManager.ActivityId, receivedHash, hash));
-
-                throw new SecurityException("Bad payload hash");
             }
         }
 
