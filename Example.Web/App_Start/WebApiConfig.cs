@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
 using HawkNet;
+using System.Web.Http.Dispatcher;
+using System.Threading.Tasks;
 
 namespace Example.Web
 {
@@ -11,21 +13,24 @@ namespace Example.Web
     {
         public static void Register(HttpConfiguration config)
         {
-            config.Filters.Add(new RequiresHawkAttribute((id) =>
-                {
-                    return new HawkCredential
-                    {
-                        Id = "dh37fgj492je",
-                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                        Algorithm = "hmacsha256",
-                        User = "steve"
-                    };
-                }));
+            var handler = new HawkMessageHandler(new HttpControllerDispatcher(config),
+             (id) =>
+             {
+                 return Task.FromResult(new HawkCredential
+                 {
+                     Id = "dh37fgj492je",
+                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                     Algorithm = "hmacsha256",
+                     User = "steve"
+                 });
+             }, 60, true);
 
             config.Routes.MapHttpRoute(
-                name: "DefaultApi",
-                routeTemplate: "api/{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
+                "DefaultApi",
+                "api/{controller}/{id}",
+                new { id = RouteParameter.Optional },
+                null,
+                handler
             );
         }
     }

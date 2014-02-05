@@ -50,9 +50,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HawkNet, Version=1.4.0.0, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
+    <Reference Include="HawkNet, Version=1.4.1.0, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\HawkNet.1.4.0.0\lib\net45\HawkNet.dll</HintPath>
+      <HintPath>..\packages\HawkNet.1.4.1.0\lib\net45\HawkNet.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>

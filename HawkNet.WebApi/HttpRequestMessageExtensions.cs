@@ -51,6 +51,47 @@ namespace HawkNet
         /// <param name="credentials">A method for searching across the available credentials</param>
         /// <param name="timestampSkewSec">Time skew in seconds for timestamp verification</param>
         /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
+        public static async Task<IPrincipal> AuthenticateAsync(this HttpRequestMessage request, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60)
+        {
+            if (request.Method == HttpMethod.Get &&
+                !string.IsNullOrEmpty(request.RequestUri.Query))
+            {
+                var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
+                if (query["bewit"] != null)
+                {
+                    return await Hawk.AuthenticateBewitAsync(query["bewit"],
+                        request.Headers.Host,
+                        request.RequestUri,
+                        credentials);
+                }
+            }
+
+            Func<Task<byte[]>> requestPayload = (async () =>
+            {
+                var payload = await request.Content.
+                    ReadAsByteArrayAsync()
+                    .ConfigureAwait(false);
+
+                return payload;
+            });
+
+
+            return await Hawk.AuthenticateAsync(request.Headers.Authorization.Parameter,
+                request.Headers.Host,
+                request.Method.ToString(),
+                request.RequestUri,
+                credentials,
+                timestampSkewSec,
+                requestPayload);
+        }
+
+        /// <summary>
+        /// Authenticates an upcoming request message
+        /// </summary>
+        /// <param name="request">Http request instance</param>
+        /// <param name="credentials">A method for searching across the available credentials</param>
+        /// <param name="timestampSkewSec">Time skew in seconds for timestamp verification</param>
+        /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
         public static IPrincipal Authenticate(this HttpRequestMessage request, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
         {
             if (request.Method == HttpMethod.Get &&
@@ -68,12 +109,14 @@ namespace HawkNet
 
             Func<byte[]> requestPayload = () =>
             {
-                var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                var payload = task.GetAwaiter().GetResult();
+                var payload = request.Content.
+                    ReadAsByteArrayAsync()
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult();
 
                 return payload;
             };
-
 
             return Hawk.Authenticate(request.Headers.Authorization.Parameter,
                 request.Headers.Host,

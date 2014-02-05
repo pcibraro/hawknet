@@ -27,11 +27,11 @@ namespace HawkNet.WebApi
 
         const string Scheme = "Hawk";
         
-        Func<string, HawkCredential> credentials;
+        Func<string, Task<HawkCredential>> credentials;
         int timeskewInSeconds = 60;
         bool includeServerAuthorization;
 
-        public HawkMessageHandler(Func<string, HawkCredential> credentials, 
+        public HawkMessageHandler(Func<string, Task<HawkCredential>> credentials, 
             int timeskewInSeconds = 60, 
             bool includeServerAuthorization = false)
             : base()
@@ -45,7 +45,7 @@ namespace HawkNet.WebApi
         }
 
         public HawkMessageHandler(HttpMessageHandler innerHandler, 
-            Func<string, HawkCredential> credentials, 
+            Func<string, Task<HawkCredential>> credentials, 
             int timeskewInSeconds = 60,
             bool includeServerAuthorization = false)
             : base(innerHandler)
@@ -73,7 +73,8 @@ namespace HawkNet.WebApi
                         query["bewit"]));
                     try
                     {
-                        principal = request.Authenticate(credentials, this.timeskewInSeconds);
+                        principal = await request
+                            .AuthenticateAsync(credentials, this.timeskewInSeconds);
                     }
                     catch (SecurityException ex)
                     {
@@ -86,22 +87,17 @@ namespace HawkNet.WebApi
                         HttpContext.Current.User = principal;
                     }
 
-                    return await base.SendAsync(request, cancellationToken);
+                    var response = await base.SendAsync(request, cancellationToken);
 
-                    //base.SendAsync(request, cancellationToken).ContinueWith<HttpResponseMessage>((response) =>
-                    //    {
-                    //        if(this.includeServerAuthorization)
-                    //        {
-                    //            return AuthenticateResponse(request.Headers.Authorization.Parameter,
-                    //                request.Headers.Host,
-                    //                request.Method.ToString(),
-                    //                request.RequestUri,
-                    //                credentials,
-                    //                response);
+                    if (!this.includeServerAuthorization)
+                        return response;
 
-
-                    //        }
-                    //    };
+                    return await AuthenticateResponse(request.Headers.Authorization.Parameter,
+                                request.Headers.Host,
+                                request.Method.ToString(),
+                                request.RequestUri,
+                                credentials,
+                                response);
                 }
             }
             
@@ -144,7 +140,7 @@ namespace HawkNet.WebApi
 
                 try
                 {
-                    principal = request.Authenticate(credentials, this.timeskewInSeconds);
+                    principal = await request.AuthenticateAsync(credentials, this.timeskewInSeconds);
 
                 }
                 catch (SecurityException ex)
@@ -160,7 +156,17 @@ namespace HawkNet.WebApi
                     HttpContext.Current.User = principal;
                 }
 
-                return await base.SendAsync(request, cancellationToken);
+                var response = await base.SendAsync(request, cancellationToken);
+
+                if (!this.includeServerAuthorization)
+                    return response;
+                
+                return await AuthenticateResponse(request.Headers.Authorization.Parameter,
+                            request.Headers.Host,
+                            request.Method.ToString(),
+                            request.RequestUri,
+                            credentials,
+                            response);
             }
         }
 
@@ -185,18 +191,18 @@ namespace HawkNet.WebApi
             return response;
         }
 
-        private static Task<HttpResponseMessage> AuthenticateResponse(string authorization,
+        private static async Task<HttpResponseMessage> AuthenticateResponse(string authorization,
             string host, 
             string method,
             Uri uri,
-            Func<string, HawkCredential> credentials,
+            Func<string, Task<HawkCredential>> credentials,
             HttpResponseMessage response)
         {
-            var id = Hawk.ParseAttributes(authorization)["id"];
-            var credential = credentials(id);
+            var attributes = Hawk.ParseAttributes(authorization);
 
-            var task = response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-            var payload = task.GetAwaiter().GetResult();
+            var credential = await credentials(attributes["id"]);
+
+            var payload = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
 
             var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
             hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
@@ -208,12 +214,12 @@ namespace HawkNet.WebApi
                 credential,
                 null,
                 null,
-                null,
+                attributes["nonce"],
                 hash);
 
-            response.Headers.Add("Server-Authorization", serverAuthorization);
+            response.Headers.Add("Server-Authorization", "Hawk " + serverAuthorization);
 
-            return Task.FromResult(response);
+            return response;
             
         }
 

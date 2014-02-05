@@ -427,19 +427,19 @@ hawk.utils = {
             // Check valid attribute names
 
             if (keys.indexOf($1) === -1) {
-                return;
+                return '';
             }
 
             // Allowed attribute value characters: !#$%&'()*+,-./:;<=>?@[]^_`{|}~ and space, a-z, A-Z, 0-9
 
             if ($2.match(/^[ \w\!#\$%&'\(\)\*\+,\-\.\/\:;<\=>\?@\[\]\^`\{\|\}~]+$/) === null) {
-                return;
+                return '';
             }
 
             // Check for duplicates
 
             if (attributes.hasOwnProperty($1)) {
-                return;
+                return '';
             }
 
             attributes[$1] = $2;

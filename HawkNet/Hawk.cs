@@ -227,8 +227,9 @@ namespace HawkNet
         /// <param name="ts">Timestamp</param>
         /// <param name="nonce">Random Nonce</param>
         /// <param name="payloadHash">Hash of the request payload</param>
+        /// <param name="type">Type used as header for the normalized string. Default is header</param>
         /// <returns>Hawk authorization header</returns>
-        public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null, string nonce = null, string payloadHash = null)
+        public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null, string nonce = null, string payloadHash = null, string type = null)
         {
             if(string.IsNullOrEmpty(host))
                 throw new ArgumentException("The host can not be null or empty", "host");
@@ -247,6 +248,9 @@ namespace HawkNet
             var normalizedTs = ((int)Math.Floor((ConvertToUnixTimestamp((ts.HasValue) 
                 ? ts.Value : DateTime.UtcNow)))).ToString();
 
+            if (String.IsNullOrEmpty(type))
+                type = "header";
+
             var mac = CalculateMac(host, 
                 method, 
                 uri, 
@@ -254,7 +258,7 @@ namespace HawkNet
                 normalizedTs, 
                 nonce, 
                 credential, 
-                "header", 
+                type, 
                 payloadHash);
 
             var authorization = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",

@@ -142,11 +142,11 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => 
             {
-                return new HawkCredential
+                return Task.FromResult(new HawkCredential
                     {
                         Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                         User = "steve"
-                    };
+                    });
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -169,13 +169,13 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkCredential
+                return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmac-sha-0",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
-                };
+                });
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -198,13 +198,13 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkCredential
+                return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmacsha256",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
-                };
+                });
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -227,13 +227,13 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return new HawkCredential
+                return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmac-sha-0",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
-                };
+                });
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -253,13 +253,13 @@ namespace HawkNet.Tests
         {
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(HttpStatusCode.Unauthorized), (id) =>
             {
-                return new HawkCredential
+                return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
                     Algorithm = "hmac-sha-0",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
-                };
+                });
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -287,7 +287,7 @@ namespace HawkNet.Tests
 
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return credential;
+                return Task.FromResult(credential);
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -321,7 +321,7 @@ namespace HawkNet.Tests
 
             var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
             {
-                return credential;
+                return Task.FromResult(credential);
             });
 
             var invoker = new HttpMessageInvoker(handler);
@@ -342,15 +342,50 @@ namespace HawkNet.Tests
             Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
         }
 
-        private HawkCredential GetCredential(string id)
+        [TestMethod]
+        public void ShouldGenerateServerAuthHeader()
         {
-            return new HawkCredential
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "hmacsha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) =>
+            {
+                return Task.FromResult(credential);
+            }, 60, true);
+
+            var invoker = new HttpMessageInvoker(handler);
+
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
+
+            var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", string.Format("id = \"456\", ts = \"{0}\", nonce=\"j4h3g2\", mac = \"{1}\", ext = \"hello\"",
+                ts, mac));
+
+            request.Headers.Host = "example.com";
+
+            var response = invoker.SendAsync(request, new CancellationToken())
+                .Result;
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.IsTrue(response.Headers.Any(h => h.Key == "Server-Authorization"));
+            
+        }
+
+        private Task<HawkCredential> GetCredential(string id)
+        {
+            return Task.FromResult(new HawkCredential
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 Algorithm = (id == "1" ? "hmacsha1" : "hmacsha256"),
                 User = "steve"
-            };
+            });
         }
 
         class DummyHttpMessageHandler : HttpMessageHandler
@@ -364,8 +399,11 @@ namespace HawkNet.Tests
 
             protected override System.Threading.Tasks.Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
+                var response = new HttpResponseMessage(HttpStatusCode.OK);
+                response.Content = new StringContent("foo");
+
                 var tsc = new TaskCompletionSource<HttpResponseMessage>();
-                tsc.SetResult(new HttpResponseMessage(statusCode));
+                tsc.SetResult(response);
 
                 return tsc.Task;
             }
