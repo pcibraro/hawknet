@@ -321,6 +321,23 @@ namespace HawkNet.Tests
             Assert.IsNotNull(claims);
         }
 
+        [TestMethod]
+        public void ShouldCalculatePayloadHash()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "hmacsha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var hash = Hawk.CalculatePayloadHash(Encoding.UTF8.GetBytes(""), "application/json", credential);
+
+            Assert.AreEqual("qAiXIVv+yjDATneWxZP2YCTa9aHRgQdnH9b3Wc+o3dg=", hash);
+
+
+        }
+
 #if NET45
         [TestMethod]
         public void ShouldAuthenticateBewitAsync()

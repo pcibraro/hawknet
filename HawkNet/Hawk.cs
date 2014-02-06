@@ -146,7 +146,7 @@ namespace HawkNet
         /// <param name="timestampSkewSec">Accepted Time skew for timestamp verification</param>
         /// <param name="payloadHash">Hash of the request payload</param>
         /// <returns></returns>
-        public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null)
+        public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null, string mediaType = null)
         {
             if (Trace.CorrelationManager.ActivityId == Guid.Empty)
                 Trace.CorrelationManager.ActivityId = Guid.NewGuid();
@@ -156,18 +156,26 @@ namespace HawkNet
             
             if (string.IsNullOrEmpty(authorization))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Authorization parameter can not be null or empty",
-                    Trace.CorrelationManager.ActivityId);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Authorization parameter can not be null or empty",
+                    Trace.CorrelationManager.ActivityId));
                     
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
             }
 
             if (string.IsNullOrEmpty(host))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Host header can not be null or empty",
-                    Trace.CorrelationManager.ActivityId);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Host header can not be null or empty",
+                    Trace.CorrelationManager.ActivityId));
 
                 throw new ArgumentException("Host header can not be null or empty", "host");
+            }
+
+            if (requestPayload != null && string.IsNullOrEmpty(mediaType))
+            {
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Media Type can not be null when the payload hash must be calculated",
+                    Trace.CorrelationManager.ActivityId));
+
+                throw new ArgumentException("MediaType can not be null or empty", "mediaType");
             }
 
             var attributes = ParseAttributes(authorization);
@@ -191,7 +199,7 @@ namespace HawkNet
 
             if (!string.IsNullOrEmpty(attributes["hash"]))
             {
-                var hash = GeneratePayloadHash(requestPayload(), credential);
+                var hash = CalculatePayloadHash(requestPayload(), mediaType, credential);
 
                 if (attributes["hash"] != hash)
                 {
@@ -533,13 +541,23 @@ namespace HawkNet
         /// <param name="payload"></param>
         /// <param name="credential"></param>
         /// <returns></returns>
-        public static string GeneratePayloadHash(byte[] payload, HawkCredential credential)
+        public static string CalculatePayloadHash(byte[] payload, string mediaType, HawkCredential credential)
         {
+            var normalized = "hawk.1.payload\n" +
+                        mediaType + "\n" +
+                        payload + "\n";
+
+            TraceSource.TraceInformation(string.Format("Normalized Payload String: {0}",
+               normalized));
+
             var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
 
             hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
 
             var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
+
+            TraceSource.TraceInformation(string.Format("Calculated payload hash: {0}",
+                hash));
 
             return hash;
         }
