@@ -45,17 +45,16 @@ Response: <span id="response"></span>
 		        success: function (error, response, body) {
 		            
 		            var isValid = hawk.client.authenticate(body, credentials, header.artifacts, {
-		                payload: body,
+		                payload: body.responseText,
                         required: true
 		            });
 
-		            //hawk.server.authenticate(req, credentialsFunc, {}, function (err, credentials, artifacts) {
-		            //    if (!err) {
-		            //        $("#response").html(body.responseText);
-		            //    } else {
-		            //        $("#response").html("error");
-		            //    }
-		            //});
+		            if (isValid) {
+		                $("#response").html(body.responseText);
+		            }
+		            else {
+		                $("#response").html("not valid");
+		            }
 		        }
 		    });
 		});

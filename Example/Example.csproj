@@ -44,9 +44,9 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HawkNet, Version=1.4.1.0, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
+    <Reference Include="HawkNet, Version=1.4.1.1, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\HawkNet.1.4.1.0\lib\net45\HawkNet.dll</HintPath>
+      <HintPath>..\packages\HawkNet.1.4.1.1\lib\net45\HawkNet.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

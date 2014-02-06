@@ -212,15 +212,24 @@ namespace HawkNet.WebApi
                 method,
                 uri,
                 credential,
-                null,
-                null,
+                attributes["ext"],
+                UnixTimeStampToDateTime(double.Parse(attributes["ts"])),
                 attributes["nonce"],
-                hash);
+                hash,
+                "response");
 
             response.Headers.Add("Server-Authorization", "Hawk " + serverAuthorization);
 
             return response;
             
+        }
+
+        private static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
+        {
+            // Unix timestamp is seconds past epoch
+            var datetime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+            datetime = datetime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return datetime;
         }
 
     }
