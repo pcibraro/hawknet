@@ -109,10 +109,7 @@ namespace HawkNet.Tests
 
             var payload = "foo";
 
-            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
-            hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
-
-            var payloadHash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)));
+            var payloadHash = Hawk.CalculatePayloadHash(payload, "text/plain", credential);
 
             var nonce = Hawk.GetRandomString(6);
 
@@ -124,6 +121,7 @@ namespace HawkNet.Tests
 
             var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com:8080/resource/4?filter=a");
             request.Content = new StringContent(payload);
+            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
 
             var invoker = new HttpMessageInvoker(handler);
             var response = invoker.SendAsync(request, new CancellationToken());

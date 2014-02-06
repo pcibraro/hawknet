@@ -123,7 +123,7 @@ namespace HawkNet.Tests
         [TestMethod]
         public void ShouldFailOnMissingCredentials()
         {
-            var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => { return null; });
+            var handler = new HawkMessageHandler(new DummyHttpMessageHandler(), (id) => { return Task.FromResult<HawkCredential>(null); });
             var invoker = new HttpMessageInvoker(handler);
 
             var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
@@ -307,7 +307,6 @@ namespace HawkNet.Tests
                 .Result;
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
         }
 
         [TestMethod]
@@ -341,7 +340,6 @@ namespace HawkNet.Tests
                 .Result;
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
-            Assert.AreEqual(Thread.CurrentPrincipal.GetType(), typeof(ClaimsPrincipal));
         }
 
         [TestMethod]
@@ -401,7 +399,7 @@ namespace HawkNet.Tests
 
             protected override System.Threading.Tasks.Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                var response = new HttpResponseMessage(HttpStatusCode.OK);
+                var response = new HttpResponseMessage(this.statusCode);
                 response.Content = new StringContent("foo");
 
                 var tsc = new TaskCompletionSource<HttpResponseMessage>();
