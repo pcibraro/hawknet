@@ -21,7 +21,7 @@ namespace HawkNet.Tests
         {
             var credential = new HawkCredential
             {
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -52,7 +52,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 User = "steve"
             };
 
@@ -66,7 +66,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -102,7 +102,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -153,7 +153,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
@@ -174,7 +174,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 

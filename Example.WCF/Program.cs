@@ -29,7 +29,7 @@ namespace Example.WCF
             {
                 Id = "id",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 User = "steve"
             };
 
@@ -91,7 +91,7 @@ namespace Example.WCF
                 requestUri,
                 new HawkCredential
                 {
-                    Algorithm = "hmacsha256",
+                    Algorithm = "sha256",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn"
                 });
 

@@ -370,7 +370,7 @@ namespace HawkNet.Owin.Tests
                                    return Task.FromResult(new HawkCredential
                                    {
                                        Id = "123",
-                                       Algorithm = "hmacsha256",
+                                       Algorithm = "sha256",
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
                                    });
@@ -482,7 +482,7 @@ namespace HawkNet.Owin.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -531,7 +531,7 @@ namespace HawkNet.Owin.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -580,7 +580,7 @@ namespace HawkNet.Owin.Tests
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                Algorithm = (id == "1" ? "hmacsha1" : "hmacsha256"),
+                Algorithm = (id == "1" ? "sha1" : "sha256"),
                 User = "steve"
             });
         }

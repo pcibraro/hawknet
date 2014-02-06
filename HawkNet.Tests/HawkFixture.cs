@@ -87,7 +87,7 @@ namespace HawkNet.Tests
         {
             var credential = new HawkCredential
             {
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 User = "steve"
             };
 
@@ -122,7 +122,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
                 {
                     Id = "123",
-                    Algorithm = "hmacsha1",
+                    Algorithm = "sha1",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 };
@@ -145,7 +145,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "456",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -167,16 +167,15 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
 
-            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+            var hmac = System.Security.Cryptography.HMAC.Create("hmac" + credential.Algorithm);
             hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
 
-            var payload = Encoding.UTF8.GetBytes("Thank you for flying Hawk");
-            var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
+            var hash = Hawk.CalculatePayloadHash("Thank you for flying Hawk", "text/plain", credential);
             
             var ts = Math.Floor(Hawk.ConvertToUnixTimestamp(DateTime.Now));
             var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "k3j4h2", credential, "header", hash);
@@ -185,7 +184,7 @@ namespace HawkNet.Tests
                 ts, mac, hash);
 
             var principal = Hawk.Authenticate(authorization, "example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), (s) => credential, 
-                requestPayload:() => payload);
+                requestPayload:() => "Thank you for flying Hawk", mediaType: "text/plain");
 
             Assert.IsNotNull(principal);
         }
@@ -197,7 +196,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -218,7 +217,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -237,7 +236,7 @@ namespace HawkNet.Tests
         {
             var credential = new HawkCredential
             {
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
@@ -252,19 +251,19 @@ namespace HawkNet.Tests
         {
             var credential = new HawkCredential
             {
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
-            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+            var hmac = System.Security.Cryptography.HMAC.Create("hmac" + credential.Algorithm);
             hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
 
-            var hash = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes("Thank you for flying Hawk")));
+            var hash = Hawk.CalculatePayloadHash("Thank you for flying Hawk", "text/plain", credential);
 
             var mac = Hawk.CalculateMac("example.com", "Get",
                 new Uri("http://example.com:8080/resource/4?filter=a"), "hello", "1353788437", "123456", credential, "header", hash);
 
-            Assert.AreEqual("FLDcWaRlOYy9NF6KvAPq/OexkmI=", mac);
+            Assert.AreEqual("lQ38ztM8oE2G4DuAQxL+H/E4yaY=", mac);
         }
 
         [TestMethod]
@@ -272,7 +271,7 @@ namespace HawkNet.Tests
         {
             var credential = new HawkCredential
             {
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
@@ -288,7 +287,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "1",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
@@ -308,7 +307,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "1",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
@@ -328,7 +327,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "1",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
             };
 
@@ -347,7 +346,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -371,7 +370,7 @@ namespace HawkNet.Tests
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                Algorithm = (id == "1" ? "hmacsha1" : "hmacsha256"),
+                Algorithm = (id == "1" ? "sha1" : "sha256"),
                 User = "steve"
             };
         }

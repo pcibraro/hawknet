@@ -328,12 +328,24 @@ hawk.crypto = {
 
     calculatePayloadHash: function (payload, algorithm, contentType) {
 
+        var n = 'hawk.' + hawk.crypto.headerVersion + '.payload\n' +
+            hawk.utils.parseContentType(contentType) + '\n' +
+            payload || '' +
+            '\n';
+
+        console.log(n);
+        console.log(algorithm.toUpperCase());
+
         var hash = CryptoJS.algo[algorithm.toUpperCase()].create();
         hash.update('hawk.' + hawk.crypto.headerVersion + '.payload\n');
         hash.update(hawk.utils.parseContentType(contentType) + '\n');
         hash.update(payload || '');
         hash.update('\n');
-        return hash.finalize().toString(CryptoJS.enc.Base64);
+        var result = hash.finalize().toString(CryptoJS.enc.Base64);
+
+        console.log(result);
+
+        return result;
     },
 
     calculateTsMac: function (ts, credentials) {

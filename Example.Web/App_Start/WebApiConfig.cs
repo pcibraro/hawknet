@@ -20,7 +20,7 @@ namespace Example.Web
                  {
                      Id = "dh37fgj492je",
                      Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                     Algorithm = "hmacsha256",
+                     Algorithm = "sha256",
                      User = "steve"
                  });
              }, 60, true);

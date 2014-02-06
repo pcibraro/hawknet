@@ -96,6 +96,7 @@ namespace HawkNet.WebApi
                                 request.Headers.Host,
                                 request.Method.ToString(),
                                 request.RequestUri,
+                                response.Content.Headers.ContentType.MediaType,
                                 credentials,
                                 response);
                 }
@@ -165,6 +166,7 @@ namespace HawkNet.WebApi
                             request.Headers.Host,
                             request.Method.ToString(),
                             request.RequestUri,
+                            response.Content.Headers.ContentType.MediaType,
                             credentials,
                             response);
             }
@@ -195,6 +197,7 @@ namespace HawkNet.WebApi
             string host, 
             string method,
             Uri uri,
+            string mediaType,
             Func<string, Task<HawkCredential>> credentials,
             HttpResponseMessage response)
         {
@@ -202,11 +205,9 @@ namespace HawkNet.WebApi
 
             var credential = await credentials(attributes["id"]);
 
-            var payload = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            var payload = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
-            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
-            var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
+            var hash = Hawk.CalculatePayloadHash(payload, mediaType, credential);
 
             var serverAuthorization = Hawk.GetAuthorizationHeader(host,
                 method,

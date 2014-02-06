@@ -17,7 +17,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "456",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };

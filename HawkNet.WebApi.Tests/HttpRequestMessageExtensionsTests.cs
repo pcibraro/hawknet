@@ -17,7 +17,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "456",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -44,7 +44,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "456",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -61,7 +61,7 @@ namespace HawkNet.Tests
             request.Headers.Host = "example.com:8080";
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Hawk", authorization);
 
-            var principal = request.Authenticate((id) => credential);
+            var principal = request.AuthenticateAsync((id) => Task.FromResult(credential));
 
             Assert.IsNotNull(principal);
         }

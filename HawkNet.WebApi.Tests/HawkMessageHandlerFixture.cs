@@ -110,6 +110,8 @@ namespace HawkNet.Tests
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
             request.Headers.Authorization = new AuthenticationHeaderValue("Hawk", "id = \"456\", ts = \"" + ts + "\", nonce=\"k3j4h2\", mac = \"qrP6b5tiS2CO330rpjUEym/USBM=\", ext = \"hello\"");
             request.Headers.Host = "localhost";
+            request.Content = new StringContent("foo");
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
 
             var response = invoker.SendAsync(request, new CancellationToken())
                 .Result;
@@ -201,7 +203,7 @@ namespace HawkNet.Tests
                 return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
-                    Algorithm = "hmacsha256",
+                    Algorithm = "sha256",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 });
@@ -230,7 +232,7 @@ namespace HawkNet.Tests
                 return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
-                    Algorithm = "hmac-sha-0",
+                    Algorithm = "sha1",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 });
@@ -256,7 +258,7 @@ namespace HawkNet.Tests
                 return Task.FromResult(new HawkCredential
                 {
                     Id = "123",
-                    Algorithm = "hmac-sha-0",
+                    Algorithm = "sha1",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 });
@@ -280,7 +282,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
                 {
                     Id = "123",
-                    Algorithm = "hmacsha1",
+                    Algorithm = "sha1",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 };
@@ -314,7 +316,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
                 {
                     Id = "123",
-                    Algorithm = "hmacsha256",
+                    Algorithm = "sha256",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                     User = "steve"
                 };
@@ -348,7 +350,7 @@ namespace HawkNet.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -383,7 +385,7 @@ namespace HawkNet.Tests
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                Algorithm = (id == "1" ? "hmacsha1" : "hmacsha256"),
+                Algorithm = (id == "1" ? "sha1" : "sha256"),
                 User = "steve"
             });
         }
