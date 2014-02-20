@@ -333,17 +333,12 @@ hawk.crypto = {
             payload || '' +
             '\n';
 
-        console.log(n);
-        console.log(algorithm.toUpperCase());
-
         var hash = CryptoJS.algo[algorithm.toUpperCase()].create();
         hash.update('hawk.' + hawk.crypto.headerVersion + '.payload\n');
         hash.update(hawk.utils.parseContentType(contentType) + '\n');
         hash.update(payload || '');
         hash.update('\n');
         var result = hash.finalize().toString(CryptoJS.enc.Base64);
-
-        console.log(result);
 
         return result;
     },

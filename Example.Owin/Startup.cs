@@ -29,7 +29,8 @@ namespace Example.Owin
                         Algorithm = "sha256",
                         User = "steve"
                     });
-                }
+                },
+                IncludeServerAuthorization = true
             });
             app.UseWebApi(config);
             
