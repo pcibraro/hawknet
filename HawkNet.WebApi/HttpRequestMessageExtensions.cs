@@ -75,15 +75,16 @@ namespace HawkNet
                 return payload;
             });
 
-
-            return await Hawk.AuthenticateAsync(request.Headers.Authorization.Parameter,
+           return await Hawk.AuthenticateAsync(request.Headers.Authorization.Parameter,
                 request.Headers.Host,
                 request.Method.ToString(),
                 request.RequestUri,
                 credentials,
                 timestampSkewSec,
                 requestPayload,
-                (request.Content != null) ? request.Content.Headers.ContentType.MediaType : null);
+                (request.Content != null && 
+                request.Content.Headers.ContentType != null) 
+                    ? request.Content.Headers.ContentType.MediaType : null);
         }
     }
 }

@@ -41,6 +41,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="HawkNet, Version=1.4.2.0, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\HawkNet.1.4.2.0\lib\net45\HawkNet.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -146,10 +150,6 @@
     <ProjectReference Include="..\HawkNet.WebApi\HawkNet.WebApi.csproj">
       <Project>{fcd8173a-2d39-4f10-a4df-230b4b649dbb}</Project>
       <Name>HawkNet.WebApi</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\HawkNet\HawkNet.csproj">
-      <Project>{f997ce59-eee3-42e4-b41a-b32985994603}</Project>
-      <Name>HawkNet</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
