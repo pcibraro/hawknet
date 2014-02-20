@@ -51,7 +51,7 @@ namespace HawkNet
         /// <param name="credentials">A method for searching across the available credentials</param>
         /// <param name="timestampSkewSec">Time skew in seconds for timestamp verification</param>
         /// <returns>A new ClaimsPrincipal instance representing the authenticated user</returns>
-        public static IPrincipal Authenticate(this HttpRequestMessage request, Func<string, HawkCredential> credentials, int timestampSkewSec = 60)
+        public static async Task<IPrincipal> AuthenticateAsync(this HttpRequestMessage request, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60)
         {
             if (request.Method == HttpMethod.Get &&
                 !string.IsNullOrEmpty(request.RequestUri.Query))
@@ -59,28 +59,31 @@ namespace HawkNet
                 var query = HttpUtility.ParseQueryString(request.RequestUri.Query);
                 if (query["bewit"] != null)
                 {
-                    return Hawk.AuthenticateBewit(query["bewit"],
+                    return await Hawk.AuthenticateBewitAsync(query["bewit"],
                         request.Headers.Host,
                         request.RequestUri,
                         credentials);
                 }
             }
 
-            Func<byte[]> requestPayload = () =>
+            Func<Task<string>> requestPayload = (async () =>
             {
-                var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                var payload = task.GetAwaiter().GetResult();
+                var payload = await request.Content
+                    .ReadAsStringAsync()
+                    .ConfigureAwait(false);
 
                 return payload;
-            };
+            });
 
-            return Hawk.Authenticate(request.Headers.Authorization.Parameter,
+
+            return await Hawk.AuthenticateAsync(request.Headers.Authorization.Parameter,
                 request.Headers.Host,
                 request.Method.ToString(),
                 request.RequestUri,
                 credentials,
                 timestampSkewSec,
-                requestPayload);
+                requestPayload,
+                (request.Content != null) ? request.Content.Headers.ContentType.MediaType : null);
         }
     }
 }

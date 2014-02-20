@@ -23,13 +23,13 @@ namespace Example
             var handler = new HawkMessageHandler(new HttpControllerDispatcher(config),
                (id) =>
                {
-                   return new HawkCredential
+                   return Task.FromResult(new HawkCredential
                    {
                        Id = id,
                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                       Algorithm = "hmacsha256",
+                       Algorithm = "sha256",
                        User = "steve"
-                   };
+                   });
                });
 
             config.Routes.MapHttpRoute(

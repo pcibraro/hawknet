@@ -27,8 +27,8 @@ namespace HawkNet
         readonly static string[] RequiredAttributes = { "id", "ts", "mac", "nonce" };
         readonly static string[] OptionalAttributes = { "ext", "hash" };
         readonly static string[] SupportedAttributes;
-        readonly static string[] SupportedAlgorithms = { "HMACSHA1", "HMACSHA256" };
-        
+        readonly static string[] SupportedAlgorithms = { "sha1", "sha256" };
+
         readonly static string RandomSource = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
         static TraceSource TraceSource = new TraceSource("HawkNet");
@@ -50,7 +50,7 @@ namespace HawkNet
         /// <param name="timestampSkewSec">Accepted Time skew for timestamp verification</param>
         /// <param name="payloadHash">Hash of the request payload</param>
         /// <returns></returns>
-        public static async Task<IPrincipal> AuthenticateAsync(string authorization, string host, string method, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60, Func<Task<byte[]>> requestPayload = null)
+        public static async Task<IPrincipal> AuthenticateAsync(string authorization, string host, string method, Uri uri, Func<string, Task<HawkCredential>> credentials, int timestampSkewSec = 60, Func<Task<string>> requestPayload = null, string mediaType = null)
         {
             if (Trace.CorrelationManager.ActivityId == Guid.Empty)
                 Trace.CorrelationManager.ActivityId = Guid.NewGuid();
@@ -60,16 +60,16 @@ namespace HawkNet
 
             if (string.IsNullOrEmpty(authorization))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Authorization parameter can not be null or empty",
-                   Trace.CorrelationManager.ActivityId);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Authorization parameter can not be null or empty",
+                   Trace.CorrelationManager.ActivityId));
 
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
             }
 
             if (string.IsNullOrEmpty(host))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Host header can not be null or empty",
-                    Trace.CorrelationManager.ActivityId);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Host header can not be null or empty",
+                    Trace.CorrelationManager.ActivityId));
 
                 throw new ArgumentException("Host header can not be null or empty", "host");
             }
@@ -85,8 +85,8 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknown user",
-                    Trace.CorrelationManager.ActivityId);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Unknown user",
+                    Trace.CorrelationManager.ActivityId));
 
                 throw new SecurityException("Unknown user", ex);
             }
@@ -95,7 +95,15 @@ namespace HawkNet
 
             if (!string.IsNullOrEmpty(attributes["hash"]))
             {
-                var hash = GeneratePayloadHash(await requestPayload(), credential);
+                if (requestPayload != null && string.IsNullOrEmpty(mediaType))
+                {
+                    TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Media Type can not be null when the payload hash must be calculated",
+                        Trace.CorrelationManager.ActivityId));
+
+                    throw new ArgumentException("MediaType can not be null or empty", "mediaType");
+                }
+
+                var hash = CalculatePayloadHash(await requestPayload(), mediaType, credential);
 
                 if (attributes["hash"] != hash)
                 {
@@ -118,14 +126,14 @@ namespace HawkNet
 
             if (!IsEqual(mac, attributes["mac"]))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad Mac. Received mac {1}. Calculated Mac {2}",
-                   Trace.CorrelationManager.ActivityId, attributes["mac"], mac);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Bad Mac. Received mac {1}. Calculated Mac {2}",
+                   Trace.CorrelationManager.ActivityId, attributes["mac"], mac));
 
                 throw new SecurityException("Bad mac");
             }
 
             var userClaim = new Claim(ClaimTypes.Name, credential.User);
-            var allClaims = Enumerable.Concat(new Claim[] { userClaim }, 
+            var allClaims = Enumerable.Concat(new Claim[] { userClaim },
                 (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
 
             var identity = new ClaimsIdentity(allClaims, "Hawk");
@@ -146,19 +154,19 @@ namespace HawkNet
         /// <param name="timestampSkewSec">Accepted Time skew for timestamp verification</param>
         /// <param name="payloadHash">Hash of the request payload</param>
         /// <returns></returns>
-        public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<byte[]> requestPayload = null, string mediaType = null)
+        public static IPrincipal Authenticate(string authorization, string host, string method, Uri uri, Func<string, HawkCredential> credentials, int timestampSkewSec = 60, Func<string> requestPayload = null, string mediaType = null)
         {
             if (Trace.CorrelationManager.ActivityId == Guid.Empty)
                 Trace.CorrelationManager.ActivityId = Guid.NewGuid();
 
             TraceSource.TraceInformation(string.Format("{0} - Received Auth header: {1}",
                 Trace.CorrelationManager.ActivityId, authorization));
-            
+
             if (string.IsNullOrEmpty(authorization))
             {
                 TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Authorization parameter can not be null or empty",
                     Trace.CorrelationManager.ActivityId));
-                    
+
                 throw new ArgumentException("Authorization parameter can not be null or empty", "authorization");
             }
 
@@ -168,14 +176,6 @@ namespace HawkNet
                     Trace.CorrelationManager.ActivityId));
 
                 throw new ArgumentException("Host header can not be null or empty", "host");
-            }
-
-            if (requestPayload != null && string.IsNullOrEmpty(mediaType))
-            {
-                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Media Type can not be null when the payload hash must be calculated",
-                    Trace.CorrelationManager.ActivityId));
-
-                throw new ArgumentException("MediaType can not be null or empty", "mediaType");
             }
 
             var attributes = ParseAttributes(authorization);
@@ -199,6 +199,14 @@ namespace HawkNet
 
             if (!string.IsNullOrEmpty(attributes["hash"]))
             {
+                if (requestPayload != null && string.IsNullOrEmpty(mediaType))
+                {
+                    TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Media Type can not be null when the payload hash must be calculated",
+                        Trace.CorrelationManager.ActivityId));
+
+                    throw new ArgumentException("MediaType can not be null or empty", "mediaType");
+                }
+
                 var hash = CalculatePayloadHash(requestPayload(), mediaType, credential);
 
                 if (attributes["hash"] != hash)
@@ -211,26 +219,26 @@ namespace HawkNet
                 }
             }
 
-            var mac = CalculateMac(host, 
-                method, 
-                uri, 
-                attributes["ext"], 
-                attributes["ts"], 
-                attributes["nonce"], 
-                credential, "header", 
+            var mac = CalculateMac(host,
+                method,
+                uri,
+                attributes["ext"],
+                attributes["ts"],
+                attributes["nonce"],
+                credential, "header",
                 attributes["hash"]);
 
             if (!IsEqual(mac, attributes["mac"]))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad Mac. Received mac {1}. Calculated Mac {2}",
-                    Trace.CorrelationManager.ActivityId, attributes["mac"], mac);
-                
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Bad Mac. Received mac {1}. Calculated Mac {2}",
+                    Trace.CorrelationManager.ActivityId, attributes["mac"], mac));
+
                 throw new SecurityException("Bad mac");
             }
 
 #if NET45
             var userClaim = new Claim(ClaimTypes.Name, credential.User);
-            var allClaims = Enumerable.Concat(new Claim[] { userClaim }, 
+            var allClaims = Enumerable.Concat(new Claim[] { userClaim },
                 (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
 
             var identity = new ClaimsIdentity(allClaims, "Hawk");
@@ -257,13 +265,13 @@ namespace HawkNet
         /// <returns>Hawk authorization header</returns>
         public static string GetAuthorizationHeader(string host, string method, Uri uri, HawkCredential credential, string ext = null, DateTime? ts = null, string nonce = null, string payloadHash = null, string type = null)
         {
-            if(string.IsNullOrEmpty(host))
+            if (string.IsNullOrEmpty(host))
                 throw new ArgumentException("The host can not be null or empty", "host");
 
             if (string.IsNullOrEmpty(method))
                 throw new ArgumentException("The method can not be null or empty", "method");
 
-            if(credential == null)
+            if (credential == null)
                 throw new ArgumentNullException("The credential can not be null", "credential");
 
             if (string.IsNullOrEmpty(nonce))
@@ -276,17 +284,17 @@ namespace HawkNet
                 type = "header";
             }
 
-            var normalizedTs = ((int)Math.Floor((ConvertToUnixTimestamp((ts.HasValue) 
+            var normalizedTs = ((int)Math.Floor((ConvertToUnixTimestamp((ts.HasValue)
                 ? ts.Value : DateTime.UtcNow)))).ToString();
 
-            var mac = CalculateMac(host, 
-                method, 
-                uri, 
-                ext, 
-                normalizedTs, 
-                nonce, 
-                credential, 
-                type, 
+            var mac = CalculateMac(host,
+                method,
+                uri,
+                ext,
+                normalizedTs,
+                nonce,
+                credential,
+                type,
                 payloadHash);
 
             var authorization = string.Format("id=\"{0}\", ts=\"{1}\", nonce=\"{2}\", mac=\"{3}\", ext=\"{4}\"",
@@ -347,8 +355,8 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknow user {1} in bewit",
-                    Trace.CorrelationManager.ActivityId, bewitParts[0]);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Unknow user {1} in bewit",
+                    Trace.CorrelationManager.ActivityId, bewitParts[0]));
 
                 throw new SecurityException("Unknown user", ex);
             }
@@ -360,8 +368,8 @@ namespace HawkNet
 
             if (!IsEqual(mac, bewitParts[2]))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad mac in bewit. Received mac {1}. Calculated mac {2}",
-                    Trace.CorrelationManager.ActivityId, bewitParts[2], mac);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Bad mac in bewit. Received mac {1}. Calculated mac {2}",
+                    Trace.CorrelationManager.ActivityId, bewitParts[2], mac));
 
                 throw new SecurityException("Bad mac");
             }
@@ -372,7 +380,7 @@ namespace HawkNet
 
             var identity = new ClaimsIdentity(allClaims, "Hawk");
             var principal = new ClaimsPrincipal(new ClaimsIdentity[] { identity });
-            
+
             return principal;
         }
 #endif
@@ -399,21 +407,21 @@ namespace HawkNet
             }
             catch (Exception ex)
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Unknow user {1} in bewit",
-                    Trace.CorrelationManager.ActivityId, bewitParts[0]);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Unknow user {1} in bewit",
+                    Trace.CorrelationManager.ActivityId, bewitParts[0]));
 
                 throw new SecurityException("Unknown user", ex);
             }
 
             ValidateCredentials(credential);
 
-            var mac = CalculateMac(uri.Host, "GET", RemoveBewitFromQuery(uri), 
+            var mac = CalculateMac(uri.Host, "GET", RemoveBewitFromQuery(uri),
                 bewitParts[3], bewitParts[1], "", credential, "bewit");
 
             if (!IsEqual(mac, bewitParts[2]))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, "{0} - Bad mac in bewit. Received mac {1}. Calculated mac {2}",
-                    Trace.CorrelationManager.ActivityId, bewitParts[2], mac);
+                TraceSource.TraceData(TraceEventType.Warning, 0, string.Format("{0} - Bad mac in bewit. Received mac {1}. Calculated mac {2}",
+                    Trace.CorrelationManager.ActivityId, bewitParts[2], mac));
 
                 throw new SecurityException("Bad mac");
             }
@@ -441,8 +449,8 @@ namespace HawkNet
         {
             var result = new StringBuilder();
             var random = new Random();
-            
-            for (var i = 0; i < size; ++i) 
+
+            for (var i = 0; i < size; ++i)
             {
                 result.Append(RandomSource[random.Next(RandomSource.Length)]);
             }
@@ -491,21 +499,21 @@ namespace HawkNet
         /// <returns>Generated mac</returns>
         public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential, string type, string payloadHash = null)
         {
-            var hmac = HMAC.Create(credential.Algorithm);
+            var hmac = HMAC.Create("hmac" + credential.Algorithm);
             hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
 
             var sanitizedHost = (host.IndexOf(':') > 0) ?
                 host.Substring(0, host.IndexOf(':')) :
                 host;
 
-            var normalized = "hawk.1." + type + "\n" + 
+            var normalized = "hawk.1." + type + "\n" +
                         ts + "\n" +
-                        nonce + "\n" + 
+                        nonce + "\n" +
                         method.ToUpper() + "\n" +
                         uri.PathAndQuery + "\n" +
                         sanitizedHost.ToLower() + "\n" +
                         uri.Port.ToString() + "\n" +
-                        ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash : "") + "\n" + 
+                        ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash : "") + "\n" +
                         ((!string.IsNullOrEmpty(ext)) ? ext : "") + "\n";
 
             TraceSource.TraceInformation(string.Format("Normalized String: {0}",
@@ -541,7 +549,7 @@ namespace HawkNet
         /// <param name="payload"></param>
         /// <param name="credential"></param>
         /// <returns></returns>
-        public static string CalculatePayloadHash(byte[] payload, string mediaType, HawkCredential credential)
+        public static string CalculatePayloadHash(string payload, string mediaType, HawkCredential credential)
         {
             var normalized = "hawk.1.payload\n" +
                         mediaType + "\n" +
@@ -550,22 +558,21 @@ namespace HawkNet
             TraceSource.TraceInformation(string.Format("Normalized Payload String: {0}",
                normalized));
 
-            var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
+            var algorithm = HashAlgorithm.Create(credential.Algorithm);
 
-            hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
-
-            var hash = Convert.ToBase64String(hmac.ComputeHash(payload));
+            var encodedMac = Convert.ToBase64String(algorithm
+                .ComputeHash(Encoding.UTF8.GetBytes(normalized)));
 
             TraceSource.TraceInformation(string.Format("Calculated payload hash: {0}",
-                hash));
-
-            return hash;
+                encodedMac));
+            
+            return encodedMac;
         }
 
         private static bool CheckTimestamp(string ts, int timestampSkewSec)
         {
             double parsedTs;
-            if(double.TryParse(ts, out parsedTs))
+            if (double.TryParse(ts, out parsedTs))
             {
                 var now = ConvertToUnixTimestamp(DateTime.Now);
                 var result = Math.Abs(parsedTs - now);
@@ -573,10 +580,10 @@ namespace HawkNet
                 // Check timestamp staleness
                 if (result > timestampSkewSec)
                 {
-                    TraceSource.TraceData(TraceEventType.Warning, 0, 
+                    TraceSource.TraceData(TraceEventType.Warning, 0,
                         string.Format("{0} - Timestamp does not match. Current ts = {1}. Received ts = {2}. {3} exceeds the configured timestamp skew, which is {4}",
                             Trace.CorrelationManager.ActivityId, now, parsedTs, result, timestampSkewSec));
-                    
+
                     return false;
                 }
                 else
@@ -584,9 +591,9 @@ namespace HawkNet
                     return true;
                 }
             }
-            
+
             return false;
-            
+
         }
 
         private static Uri RemoveBewitFromQuery(Uri uri)
@@ -614,7 +621,7 @@ namespace HawkNet
         {
             if (!RequiredAttributes.All(a => attributes.AllKeys.Any(k => k == a)))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, 
+                TraceSource.TraceData(TraceEventType.Warning, 0,
                     string.Format("{0} - Missing attributes", Trace.CorrelationManager.ActivityId));
 
                 throw new SecurityException("Missing attributes");
@@ -622,7 +629,7 @@ namespace HawkNet
 
             if (!attributes.AllKeys.All(a => SupportedAttributes.Any(k => k == a)))
             {
-                TraceSource.TraceData(TraceEventType.Warning, 0, 
+                TraceSource.TraceData(TraceEventType.Warning, 0,
                     string.Format("{0} - Unknown attributes", Trace.CorrelationManager.ActivityId));
 
                 throw new SecurityException("Unknown attributes");
@@ -693,15 +700,16 @@ namespace HawkNet
         }
 
         // Fixed time comparision
-        private static bool IsEqual(string a, string b) 
+        private static bool IsEqual(string a, string b)
         {
-            if (a.Length != b.Length) 
+            if (a.Length != b.Length)
             {
                 return false;
             }
 
             int result = 0;
-            for (int i = 0; i < a.Length; i++) {
+            for (int i = 0; i < a.Length; i++)
+            {
                 result |= a[i] ^ b[i];
             }
 

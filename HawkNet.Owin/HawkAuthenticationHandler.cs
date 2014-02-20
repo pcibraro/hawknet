@@ -99,13 +99,29 @@ namespace HawkNet.Owin
                     return EmptyTicket();
                 }
 
+                Func<Task<string>> requestPayload = (async () =>
+                {
+                    var requestBuffer = new MemoryStream();
+                    await Request.Body.CopyToAsync(requestBuffer).ConfigureAwait(false);
+                    requestBuffer.Flush();
+
+                    Request.Body = requestBuffer;
+
+                    var payload = Encoding.UTF8.GetString(requestBuffer.ToArray());
+                    
+                    return payload;
+                });
+
                 try
                 {
                     var principal = await Hawk.AuthenticateAsync(authorization.Parameter,
                             Request.Host.Value,
                             Request.Method,
                             Request.Uri,
-                            this.Options.Credentials);
+                            this.Options.Credentials,
+                            this.Options.TimeskewInSeconds,
+                            requestPayload,
+                            Request.ContentType);
 
                     var identity = (ClaimsIdentity)((ClaimsPrincipal)principal).Identity;
                     var ticket = new AuthenticationTicket(identity, null);
@@ -121,20 +137,80 @@ namespace HawkNet.Owin
             }
         }
 
-        protected override Task ApplyResponseChallengeAsync()
+        public override Task<bool> InvokeAsync()
         {
-            if (Response.StatusCode != 401)
+            if (this.Options.IncludeServerAuthorization)
             {
-                return Task.FromResult<object>(null);
+                Response.Body = new StreamWrapper(Response.Body);
             }
 
-            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
-            var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
-                    ts, "pool.ntp.org");
+            return base.InvokeAsync();
+        }
 
-            Response.Headers.Append("WWW-Authenticate", HawkAuthenticationOptions.Scheme + " " + challenge);
-            
-            return Task.FromResult<object>(null);
+        protected override async Task ApplyResponseChallengeAsync()
+        {
+            if (Response.StatusCode == 200)
+            {
+                if (this.Options.IncludeServerAuthorization)
+                {
+                    var authorization = AuthenticationHeaderValue.Parse(Request.Headers["authorization"]);
+
+                    await AuthenticateResponse(authorization.Parameter,
+                            Request.Host.Value,
+                            Request.Method,
+                            Request.Uri,
+                            Response.ContentType,
+                            this.Options.Credentials,
+                            Response);
+                }
+            }
+            else if (Response.StatusCode == 401)
+            {
+                var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now).ToString();
+                var challenge = string.Format("ts=\"{0}\" ntp=\"{1}\"",
+                        ts, "pool.ntp.org");
+
+                Response.Headers.Append("WWW-Authenticate", HawkAuthenticationOptions.Scheme + " " + challenge);
+            }
+        }
+
+        private async Task AuthenticateResponse(string authorization,
+            string host,
+            string method,
+            Uri uri,
+            string mediaType,
+            Func<string, Task<HawkCredential>> credentials,
+            IOwinResponse response)
+        {
+            var attributes = Hawk.ParseAttributes(authorization);
+
+            var credential = await credentials(attributes["id"]);
+
+            response.Body.Seek(0, SeekOrigin.Begin);
+
+            var payload = Encoding.UTF8.GetString(((StreamWrapper)response.Body).ToArray());
+
+            var hash = Hawk.CalculatePayloadHash(payload, response.ContentType, credential);
+
+            var serverAuthorization = Hawk.GetAuthorizationHeader(host,
+                method,
+                uri,
+                credential,
+                attributes["ext"],
+                UnixTimeStampToDateTime(double.Parse(attributes["ts"])),
+                attributes["nonce"],
+                hash,
+                "response");
+
+            response.Headers.Add("Server-Authorization", new string[] { "Hawk " + serverAuthorization });
+        }
+
+        private static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
+        {
+            // Unix timestamp is seconds past epoch
+            var datetime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+            datetime = datetime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return datetime;
         }
 
         private static AuthenticationTicket EmptyTicket()

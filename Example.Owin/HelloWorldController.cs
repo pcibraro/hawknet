@@ -9,7 +9,7 @@ namespace Example.Owin
 {
     public class HelloWorldController : ApiController
     {
-        [Authorize]
+        //[Authorize]
         public string Get()
         {
             return "hello " + User.Identity.Name;

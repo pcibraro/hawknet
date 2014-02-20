@@ -30,7 +30,7 @@ namespace Example
                 {
                     Id = "dh37fgj492je",
                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                    Algorithm = "hmacsha256",
+                    Algorithm = "sha256",
                     User = "steve"
                 };
 
@@ -80,22 +80,6 @@ namespace Example
         }
     }
 
-    public class HawkRepository : IHawkCredentialRepository
-    {
-        public HawkCredential Get(string identifier)
-        {
-            var credential = new HawkCredential
-            {
-                Id = "dh37fgj492je",
-                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                Algorithm = "hmacsha256",
-                User = "steve"
-            };
-
-            return credential;
-        }
-    }
-
     public class HelloWorldController : ApiController
     {
         [Authorize]
@@ -111,16 +95,6 @@ namespace Example
         public string Get()
         {
             return "hello anonymous";
-        }
-    }
-
-
-    public class HelloWorldWithFilterController : ApiController
-    {
-        [RequiresHawkAttribute(typeof(HawkRepository))]
-        public string Get()
-        {
-            return "hello " + User.Identity.Name;
         }
     }
 }

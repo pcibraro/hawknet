@@ -14,6 +14,8 @@ using Owin;
 using Microsoft.Owin.Logging;
 using Microsoft.Owin.Hosting.Builder;
 using Microsoft.Owin.Infrastructure;
+using System.Text;
+using System.IO;
 
 namespace HawkNet.Owin.Tests
 {
@@ -370,7 +372,7 @@ namespace HawkNet.Owin.Tests
                                    return Task.FromResult(new HawkCredential
                                    {
                                        Id = "123",
-                                       Algorithm = "hmacsha256",
+                                       Algorithm = "sha256",
                                        Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                                        User = "steve"
                                    });
@@ -482,7 +484,7 @@ namespace HawkNet.Owin.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha1",
+                Algorithm = "sha1",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -531,7 +533,7 @@ namespace HawkNet.Owin.Tests
             var credential = new HawkCredential
             {
                 Id = "123",
-                Algorithm = "hmacsha256",
+                Algorithm = "sha256",
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
                 User = "steve"
             };
@@ -574,13 +576,129 @@ namespace HawkNet.Owin.Tests
             Assert.IsTrue(logger.Messages.Count == 0);
         }
 
+        [TestMethod]
+        public void ShouldParseValidAuthHeaderAndPayloadWithSha256()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "sha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var body = "hello world";
+            var bodyBytes = Encoding.UTF8.GetBytes(body);
+            var ms = new MemoryStream();
+            ms.Write(bodyBytes, 0, bodyBytes.Length);
+            ms.Flush();
+            ms.Seek(0, SeekOrigin.Begin);
+
+            var logger = new Logger();
+            var builder = new AppBuilderFactory().Create();
+            builder.SetLoggerFactory(new LoggerFactory(logger));
+
+            var hash = Hawk.CalculatePayloadHash(body, "text/plain", credential);
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
+            var mac = Hawk.CalculateMac("example.com", "post", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header", hash);
+
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
+            
+            request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
+            request.Method = "post";
+            request.Body = ms;
+            request.SetHeader("Host", new string[] { "example.com" });
+            request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
+            request.ContentType = "text/plain";
+            request.SetHeader("Authorization", new string[] { "Hawk " + 
+                string.Format("id = \"456\", ts = \"{0}\", nonce=\"j4h3g2\", mac = \"{1}\", ext = \"hello\", hash=\"{2}\"",
+                ts, mac, hash)});
+
+            var response = (OwinResponse)context.Response;
+
+            var middleware = new HawkAuthenticationMiddleware(
+                            new AppFuncTransition((env) =>
+                            {
+                                response.StatusCode = 200;
+                                return Task.FromResult<object>(null);
+                            }),
+                           builder,
+                           new HawkAuthenticationOptions
+                           {
+                               Credentials = (id) => Task.FromResult(credential)
+                           }
+                        );
+
+            middleware.Invoke(context);
+
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.IsTrue(logger.Messages.Count == 0);
+        }
+
+        [TestMethod]
+        public void ShouldAuthenticateServer()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "sha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var logger = new Logger();
+            var builder = new AppBuilderFactory().Create();
+            builder.SetLoggerFactory(new LoggerFactory(logger));
+
+            var ts = Hawk.ConvertToUnixTimestamp(DateTime.Now);
+            var mac = Hawk.CalculateMac("example.com", "get", new Uri("http://example.com:8080/resource/4?filter=a"), "hello", ts.ToString(), "j4h3g2", credential, "header");
+
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
+            request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
+            request.Method = "get";
+            request.SetHeader("Host", new string[] { "example.com" });
+            request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
+            request.SetHeader("Authorization", new string[] { "Hawk " + 
+                string.Format("id = \"456\", ts = \"{0}\", nonce=\"j4h3g2\", mac = \"{1}\", ext = \"hello\"",
+                ts, mac)});
+
+            var response = (OwinResponse)context.Response;
+            response.Body = new MemoryStream();
+
+            var middleware = new HawkAuthenticationMiddleware(
+                            new AppFuncTransition((env) =>
+                            {
+                                response.StatusCode = 200;
+                                
+                                var content = Encoding.UTF8.GetBytes("foo");
+
+                                response.Body.Write(content, 0, content.Length);
+
+                                return Task.FromResult<object>(null);
+                            }),
+                           builder,
+                           new HawkAuthenticationOptions
+                           {
+                               Credentials = (id) => Task.FromResult(credential),
+                               IncludeServerAuthorization = true,
+                           }
+                        );
+
+            middleware.Invoke(context);
+
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.IsTrue(logger.Messages.Count == 0);
+        }
+
         private Task<HawkCredential> GetCredential(string id)
         {
             return Task.FromResult(new HawkCredential
             {
                 Id = id,
                 Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                Algorithm = (id == "1" ? "hmacsha1" : "hmacsha256"),
+                Algorithm = (id == "1" ? "sha1" : "sha256"),
                 User = "steve"
             });
         }

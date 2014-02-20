@@ -19,6 +19,15 @@ namespace Example.Web
             WebApiConfig.Register(GlobalConfiguration.Configuration);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
+
+            
         }
+
+        public void Application_Error(object sender, EventArgs e)
+        {
+            var s = HttpContext.Current.Error.ToString();
+        }
+
+        
     }
 }

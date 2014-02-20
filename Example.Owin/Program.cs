@@ -3,6 +3,7 @@ using Microsoft.Owin.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -22,7 +23,7 @@ namespace Example.Owin
                     {
                         Id = "dh37fgj492je",
                         Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                        Algorithm = "hmacsha256",
+                        Algorithm = "sha256",
                         User = "steve"
                     };
 
@@ -31,7 +32,14 @@ namespace Example.Owin
                 request.Method = "GET";
                 using (var response = (HttpWebResponse)request.GetResponse())
                 {
-                    Console.WriteLine("Call made. Status Code " + response.StatusCode);
+                    using(var sr = new StreamReader(response.GetResponseStream()))
+                    {
+                        var content = sr.ReadToEnd();
+
+                        Console.WriteLine("Call made. Status Code " + response.StatusCode + ". Response " + content);
+                    }
+
+                   
                 }
 
                 Console.ReadKey();

@@ -39,7 +39,7 @@ namespace HawkNet.WebApi
             this.includePayloadHash = includePayloadHash;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
             string payloadHash = null;
 
@@ -47,13 +47,9 @@ namespace HawkNet.WebApi
                 request.Method != HttpMethod.Get &&
                 request.Content != null)
             {
-                var hmac = System.Security.Cryptography.HMAC.Create(credential.Algorithm);
-                hmac.Key = Encoding.ASCII.GetBytes(credential.Key);
-
-                var task = request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                var payload = task.GetAwaiter().GetResult();
-
-                payloadHash = Convert.ToBase64String(hmac.ComputeHash(payload));
+                payloadHash = Hawk.CalculatePayloadHash(await request.Content.ReadAsStringAsync().ConfigureAwait(false),
+                    request.Content.Headers.ContentType.MediaType,
+                    credential);
             }
 
             request.Headers.Host = request.RequestUri.Host;
@@ -64,7 +60,7 @@ namespace HawkNet.WebApi
                 this.nonce,
                 payloadHash);
 
-            return base.SendAsync(request, cancellationToken);
+            return await base.SendAsync(request, cancellationToken);
         }
     }
 }
