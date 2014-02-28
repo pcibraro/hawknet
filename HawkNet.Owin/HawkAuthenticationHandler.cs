@@ -192,15 +192,18 @@ namespace HawkNet.Owin
 
             var hash = Hawk.CalculatePayloadHash(payload, response.ContentType, credential);
 
-            var serverAuthorization = Hawk.GetAuthorizationHeader(host,
+            var mac = Hawk.CalculateMac(host,
                 method,
                 uri,
-                credential,
-                attributes["ext"],
-                UnixTimeStampToDateTime(double.Parse(attributes["ts"])),
+                null,
+                attributes["ts"],
                 attributes["nonce"],
-                hash,
-                "response");
+                credential,
+                "response",
+                hash);
+
+            var serverAuthorization = string.Format("mac=\"{0}\", hash=\"{1}\"",
+                    mac, hash);
 
             response.Headers.Add("Server-Authorization", new string[] { "Hawk " + serverAuthorization });
         }

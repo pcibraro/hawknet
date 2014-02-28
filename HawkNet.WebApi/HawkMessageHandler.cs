@@ -124,24 +124,24 @@ namespace HawkNet.WebApi
                 }
                 else
                 {
-                    return response;
-                }
+                return response;
             }
-            else
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
             {
-                if (string.IsNullOrWhiteSpace(request.Headers.Authorization.Parameter))
-                {
-                    return ToResponse(request, HttpStatusCode.BadRequest, "Invalid header format");
-                }
+                return ToResponse(request, HttpStatusCode.BadRequest, "Invalid header format");
+            }
 
-                if (string.IsNullOrWhiteSpace(request.Headers.Host))
-                {
-                    return ToResponse(request, HttpStatusCode.BadRequest, "Missing Host header");
-                }
+            if (string.IsNullOrWhiteSpace(request.Headers.Host))
+            {
+                return ToResponse(request, HttpStatusCode.BadRequest, "Missing Host header");
+            }
 
-                try
-                {
-                    principal = await request.AuthenticateAsync(credentials, this.timeskewInSeconds);
+            try
+            {
+                principal = await request.AuthenticateAsync(credentials, this.timeskewInSeconds);
 
                 }
                 catch (SecurityException ex)
@@ -209,29 +209,23 @@ namespace HawkNet.WebApi
 
             var hash = Hawk.CalculatePayloadHash(payload, mediaType, credential);
 
-            var serverAuthorization = Hawk.GetAuthorizationHeader(host,
+            var mac = Hawk.CalculateMac(host,
                 method,
                 uri,
-                credential,
-                attributes["ext"],
-                UnixTimeStampToDateTime(double.Parse(attributes["ts"])),
+                null,
+                attributes["ts"],
                 attributes["nonce"],
-                hash,
-                "response");
+                credential,
+                "response",
+                hash);
+
+            var serverAuthorization = string.Format("mac=\"{0}\", hash=\"{1}\"",
+                    mac, hash);
 
             response.Headers.Add("Server-Authorization", "Hawk " + serverAuthorization);
 
             return response;
             
         }
-
-        private static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
-        {
-            // Unix timestamp is seconds past epoch
-            var datetime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-            datetime = datetime.AddSeconds(unixTimeStamp).ToLocalTime();
-            return datetime;
-        }
-
     }
 }
