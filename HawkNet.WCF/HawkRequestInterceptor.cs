@@ -13,6 +13,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Security;
 using System.ServiceModel.Web;
 using System.Text;
+using System.Web;
 
 namespace HawkNet.WCF
 {
@@ -97,17 +98,19 @@ namespace HawkNet.WCF
             
             var authHeader = request.Headers["Authorization"];
 
-            if (authHeader != null && authHeader.StartsWith(HawkScheme))
+            if (authHeader != null && authHeader.StartsWith(HawkScheme, StringComparison.InvariantCultureIgnoreCase))
             {
                 var hawk = authHeader.Substring(HawkScheme.Length).Trim();
 
                 TraceSource.TraceInformation(string.Format("{0} - Received Auth header: {1}",
                     Trace.CorrelationManager.ActivityId, hawk));
 
+                var decodedUrl = HttpUtility.UrlDecode(requestMessage.Properties.Via.AbsoluteUri);
+
                 var principal = Hawk.Authenticate(hawk,
                     request.Headers["host"],
                     request.Method,
-                    requestMessage.Properties.Via,
+                    new Uri(decodedUrl),
                     this.credentials,
                     this.timeskewInSeconds);
 
