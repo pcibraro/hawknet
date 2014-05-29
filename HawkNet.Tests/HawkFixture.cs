@@ -321,6 +321,25 @@ namespace HawkNet.Tests
         }
 
         [TestMethod]
+        public void ShouldAuthenticateBewitWithEncodedUrl()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "sha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?path=%2Fmovie%2Fcomedy%2F2014"), credential,
+                200, "hello");
+
+            var claims = Hawk.AuthenticateBewit(bewit, "example.com", new Uri("http://example.com:8080/resource/4?path=%2Fmovie%2Fcomedy%2F2014&bewit=" + bewit),
+                s => credential);
+
+            Assert.IsNotNull(claims);
+        }
+
+        [TestMethod]
         public void ShouldCalculatePayloadHash()
         {
             var credential = new HawkCredential

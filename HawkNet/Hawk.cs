@@ -510,7 +510,7 @@ namespace HawkNet
                         ts + "\n" +
                         nonce + "\n" +
                         method.ToUpper() + "\n" +
-                        uri.PathAndQuery + "\n" +
+                        uri.PathAndQuery.ToLower() + "\n" +
                         sanitizedHost.ToLower() + "\n" +
                         uri.Port.ToString() + "\n" +
                         ((!string.IsNullOrEmpty(payloadHash)) ? payloadHash : "") + "\n" +
@@ -601,7 +601,7 @@ namespace HawkNet
             var parsedQueryString = HttpUtility.ParseQueryString(uri.Query);
             parsedQueryString.Remove("bewit");
 
-            var resultingQuery = string.Join("&", parsedQueryString.Cast<string>().Select(e => e + "=" + parsedQueryString[e]).ToArray());
+            var resultingQuery = parsedQueryString.ToString();
 
             var newUri = string.Format("{0}://{1}:{2}{3}",
                 uri.Scheme,
