@@ -12,4 +12,7 @@
     <copyright>Copyright 2012</copyright>
     <tags>Auth Security Hawk</tags>
   </metadata>
+  <files>
+        <file src="..\HawkNet35\bin\Signed\HawkNet.dll" target="lib\net35\HawkNet.dll" />
+  </files>
 </package>
