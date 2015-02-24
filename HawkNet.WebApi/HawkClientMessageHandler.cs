@@ -52,8 +52,6 @@ namespace HawkNet.WebApi
                     credential);
             }
 
-            request.Headers.Host = request.RequestUri.Host;
-
             request.SignRequest(credential,
                 this.ext,
                 this.ts,
