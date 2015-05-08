@@ -598,10 +598,40 @@ namespace HawkNet
 
         private static Uri RemoveBewitFromQuery(Uri uri)
         {
-            var parsedQueryString = HttpUtility.ParseQueryString(uri.Query);
-            parsedQueryString.Remove("bewit");
+            var qs = uri.Query;
+            var ixs = qs.IndexOf("bewit=", 0, StringComparison.InvariantCultureIgnoreCase);
+            if (ixs > 0)
+            {
+                var ixe = qs.IndexOf("&", ixs);
+                if (ixe > 0)
+                {
+                    qs = qs.Substring(0, ixs) + qs.Substring(ixe);
+                }
+                else
+                {
+                    qs = qs.Substring(0, ixs);
+                }
 
-            var resultingQuery = parsedQueryString.ToString();
+                if (qs.EndsWith("&"))
+                { 
+                    qs = qs.Substring(0, qs.Length - 1);
+                }
+
+                if(qs.StartsWith("?&"))
+                {
+                    qs = qs.Substring(2);
+                }
+                else if(qs.StartsWith("?"))
+                {
+                    qs = qs.Substring(1);
+                }
+            }
+
+
+       //     var parsedQueryString = HttpUtility.ParseQueryString(uri.Query);
+       //     parsedQueryString.Remove("bewit");
+
+       //     var qs = parsedQueryString.ToString();
 
             var newUri = string.Format("{0}://{1}:{2}{3}",
                 uri.Scheme,
@@ -609,9 +639,9 @@ namespace HawkNet
                 uri.Port,
                 uri.AbsolutePath);
 
-            if (!string.IsNullOrEmpty(resultingQuery))
+            if (!string.IsNullOrEmpty(qs) && qs.Length > 1)
             {
-                newUri += "?" + resultingQuery;
+                newUri += "?" + qs;
             }
 
             return new Uri(newUri);

@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 #if NET45
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
 #endif
 
 namespace HawkNet.Tests
@@ -340,6 +341,44 @@ namespace HawkNet.Tests
         }
 
         [TestMethod]
+        public void ShouldAuthenticateBewitWithEmptyQueryString()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "sha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4"), credential,
+                200, "hello");
+
+            var claims = Hawk.AuthenticateBewit(bewit, "example.com", new Uri("http://example.com:8080/resource/4?bewit=" + bewit),
+                s => credential);
+
+            Assert.IsNotNull(claims);
+        }
+
+        [TestMethod]
+        public void ShouldAuthenticateBewitWithBewitFirstInQueryString()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "sha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?path=%2Fmovie%2Fcomedy%2F2014"), credential,
+                200, "hello");
+
+            var claims = Hawk.AuthenticateBewit(bewit, "example.com", new Uri("http://example.com:8080/resource/4?bewit=" + bewit + "&path=%2Fmovie%2Fcomedy%2F2014"),
+                s => credential);
+
+            Assert.IsNotNull(claims);
+        }
+
+        [TestMethod]
         public void ShouldCalculatePayloadHash()
         {
             var credential = new HawkCredential
@@ -354,6 +393,44 @@ namespace HawkNet.Tests
             Assert.AreEqual("NVuBm+XMyya3Tq4EhpZ0cQWjVUyIA8sKnySkKDOIM4M=", hash);
 
 
+        }
+
+        [TestMethod]
+        public void ShouldAuthenticateBewitWithEncodedUrlWithPercentSpaces()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "sha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?path=%2Fmovie%2Fcomedy%20club%2F2014"), credential,
+                200);
+
+            var claims = Hawk.AuthenticateBewit(bewit, "example.com", new Uri("http://example.com:8080/resource/4?path=%2Fmovie%2Fcomedy%20club%2F2014&bewit=" + bewit),
+                s => credential);
+
+            Assert.IsNotNull(claims);
+        }
+
+        [TestMethod]
+        public void ShouldAuthenticateBewitWithEncodedUrlWithForeignChars()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "1",
+                Algorithm = "sha1",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+            };
+
+            var bewit = Hawk.GetBewit("example.com", new Uri("http://example.com:8080/resource/4?path=Soluci%C3%B3n.docx"), credential,
+                200, "hello");
+
+            var claims = Hawk.AuthenticateBewit(bewit, "example.com", new Uri("http://example.com:8080/resource/4?path=Soluci%C3%B3n.docx&bewit=" + bewit),
+                s => credential);
+
+            Assert.IsNotNull(claims);
         }
 
 #if NET45
