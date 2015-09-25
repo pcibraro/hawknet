@@ -13,25 +13,28 @@ namespace Example.Web
     {
         public static void Register(HttpConfiguration config)
         {
-            var handler = new HawkMessageHandler(new HttpControllerDispatcher(config),
-             (id) =>
-             {
-                 return Task.FromResult(new HawkCredential
-                 {
-                     Id = "dh37fgj492je",
-                     Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                     Algorithm = "sha256",
-                     User = "steve"
-                 });
-             }, 60, true);
-
             config.Routes.MapHttpRoute(
                 "DefaultApi",
                 "api/{controller}/{id}",
                 new { id = RouteParameter.Optional },
-                null,
-                handler
+                null
             );
+
+            config.Filters.Add(new HawkAuthentication(typeof(HawkCredentialRepository)));
+        }
+    }
+
+    internal class HawkCredentialRepository : IHawkCredentialRepository
+    {
+        public Task<HawkCredential> GetCredentialsAsync(string id)
+        {
+            return Task.FromResult(new HawkCredential
+            {
+                Id = "dh37fgj492je",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                Algorithm = "sha256",
+                User = "steve"
+            });
         }
     }
 }
