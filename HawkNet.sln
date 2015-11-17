@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet", "HawkNet\HawkNet.csproj", "{F997CE59-EEE3-42E4-B41A-B32985994603}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet.Tests", "HawkNet.Tests\HawkNet.Tests.csproj", "{816EFB3E-3183-47A5-9C75-B7B965455222}"

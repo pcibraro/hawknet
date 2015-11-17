@@ -499,7 +499,15 @@ namespace HawkNet
         /// <returns>Generated mac</returns>
         public static string CalculateMac(string host, string method, Uri uri, string ext, string ts, string nonce, HawkCredential credential, string type, string payloadHash = null)
         {
-            var hmac = HMAC.Create("hmac" + credential.Algorithm);
+            HMAC hmac = null;
+            
+            if (credential.Algorithm.Equals("sha1", StringComparison.InvariantCultureIgnoreCase))
+                hmac = new HMACSHA1();
+            else if (credential.Algorithm.Equals("sha256", StringComparison.InvariantCultureIgnoreCase))
+                hmac = new HMACSHA256();
+            else
+                throw new Exception("Not supported algorithm");
+
             hmac.Key = Encoding.UTF8.GetBytes(credential.Key);
 
             var sanitizedHost = (host.IndexOf(':') > 0) ?
