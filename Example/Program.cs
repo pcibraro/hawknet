@@ -38,7 +38,7 @@ namespace Example
                 var client = new HttpClient(clientHandler);
 
                 var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/Api/HelloWorld");
-                request.Headers.Host = "localhost";
+                request.Headers.Host = "localhost:8091";
 
                 var response = client.SendAsync(request).Result;
                 string message = response.Content.ReadAsStringAsync().Result;
@@ -47,7 +47,7 @@ namespace Example
                 var client2 = new HttpClient();
 
                 request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/Api/HelloWorldAnonymous");
-                request.Headers.Host = "localhost";
+                request.Headers.Host = "localhost:8091";
 
                 response = client2.SendAsync(request).Result;
                 message = response.Content.ReadAsStringAsync().Result;
@@ -58,30 +58,24 @@ namespace Example
                 var bewit = Hawk.GetBewit("localhost", new Uri("http://localhost:8091/Api/HelloWorld"), credential, 60000);
 
                 request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/Api/HelloWorld?bewit=" + bewit);
-                request.Headers.Host = "localhost";
+                request.Headers.Host = "localhost:8091";
 
                 response = client3.SendAsync(request).Result;
 
                 message = response.Content.ReadAsStringAsync().Result;
                 Console.WriteLine("Response {0} - Http Status Code {1}", message, response.StatusCode);
-
-                var client4 = new HttpClient(clientHandler);
-
-                var request4 = new HttpRequestMessage(HttpMethod.Get, "http://localhost:8091/api/filter");
-                request4.Headers.Host = "localhost";
-
-                var response4 = client4.SendAsync(request4).Result;
-                string message4 = response4.Content.ReadAsStringAsync().Result;
-                Console.WriteLine("Response {0} - Http Status Code {1}", message4, response4.StatusCode);
-
+                
                 Console.WriteLine("Press a key to close the app");
                 Console.ReadLine();
             }
         }
     }
 
+    
     public class HelloWorldController : ApiController
     {
+       
+        [HawkAuthentication(typeof(HawkCredentialRepository), 60, true)]
         [Authorize]
         public string Get()
         {
@@ -97,4 +91,16 @@ namespace Example
             return "hello anonymous";
         }
     }
+
+    //public class HelloWorldWithFilterController : ApiController
+    //{
+    //    [HawkAuthentication(typeof(HawkCredentialRepository))]
+    //    [Authorize]
+    //    public string Get()
+    //    {
+    //        return "hello " + User.Identity.Name;
+    //    }
+    //}
+
+
 }

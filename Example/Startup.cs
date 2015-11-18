@@ -19,25 +19,8 @@ namespace Example
         {
             // Configure Web API for self-host. 
             HttpConfiguration config = new HttpConfiguration();
-            
-            var handler = new HawkMessageHandler(new HttpControllerDispatcher(config),
-               (id) =>
-               {
-                   return Task.FromResult(new HawkCredential
-                   {
-                       Id = id,
-                       Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
-                       Algorithm = "sha256",
-                       User = "steve"
-                   });
-               });
 
-            config.Routes.MapHttpRoute(
-                "Filter", "api/filter",
-                new
-                {
-                    controller = "HelloWorldWithFilter"
-                });
+            config.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
 
             config.Routes.MapHttpRoute(
                 "API Default", "api/{controller}/{id}",
@@ -45,10 +28,11 @@ namespace Example
                 {
                     id = RouteParameter.Optional,
                     controller = "HelloWorld"
-                },
-                null,
-                handler
+                }
+                
             );
+
+            
 
             appBuilder.UseWebApi(config);
         }
