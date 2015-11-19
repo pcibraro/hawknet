@@ -42,8 +42,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HawkNet, Version=1.4.3.0, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
-      <HintPath>..\packages\HawkNet.1.4.3.0\lib\net45\HawkNet.dll</HintPath>
+    <Reference Include="HawkNet, Version=1.4.4.0, Culture=neutral, PublicKeyToken=840f8ba19d15c979, processorArchitecture=MSIL">
+      <HintPath>..\packages\HawkNet.1.4.4.0\lib\net45\HawkNet.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
