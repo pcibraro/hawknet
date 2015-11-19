@@ -80,6 +80,7 @@ namespace HawkNet.Tests
                 credential, "hello", date, nonce);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com:8080/resource/4?filter=a");
+            request.Headers.Host = "example.com";
 
             var invoker = new HttpMessageInvoker(handler);
             invoker.SendAsync(request, new CancellationToken());
@@ -120,11 +121,12 @@ namespace HawkNet.Tests
                 credential, "hello", date, nonce, true);
 
             var request = new HttpRequestMessage(HttpMethod.Post, "http://example.com:8080/resource/4?filter=a");
+            request.Headers.Host = "example.com";
             request.Content = new StringContent(payload);
             request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
 
             var invoker = new HttpMessageInvoker(handler);
-            var response = invoker.SendAsync(request, new CancellationToken());
+            var response = invoker.SendAsync(request, new CancellationToken()).Result;
 
             var mac = Hawk.CalculateMac(request.Headers.Host, request.Method.ToString(), request.RequestUri,
                 "hello", ts, nonce, credential, "header", payloadHash);
