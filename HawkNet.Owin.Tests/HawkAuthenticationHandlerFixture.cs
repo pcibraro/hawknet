@@ -637,6 +637,166 @@ namespace HawkNet.Owin.Tests
         }
 
         [TestMethod]
+        public void ShouldNotThrowWhenIncludeServerAuthorizationIsTrueAndAuthorizationIsMissing()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "sha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var body = "hello world";
+            var bodyBytes = Encoding.UTF8.GetBytes(body);
+            var ms = new MemoryStream();
+            ms.Write(bodyBytes, 0, bodyBytes.Length);
+            ms.Flush();
+            ms.Seek(0, SeekOrigin.Begin);
+
+            var logger = new Logger();
+            var builder = new AppBuilderFactory().Create();
+            builder.SetLoggerFactory(new LoggerFactory(logger));
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
+
+            request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
+            request.Method = "post";
+            request.Body = ms;
+            request.SetHeader("Host", new string[] { "example.com" });
+            request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
+            request.ContentType = "text/plain";
+
+            var response = (OwinResponse)context.Response;
+
+            var middleware = new HawkAuthenticationMiddleware(
+                            new AppFuncTransition((env) =>
+                            {
+                                response.StatusCode = 200;
+                                return Task.FromResult<object>(null);
+                            }),
+                           builder,
+                           new HawkAuthenticationOptions
+                           {
+                               Credentials = (id) => Task.FromResult(credential),
+                               IncludeServerAuthorization = true
+                           }
+                        );
+
+            var task = middleware.Invoke(context);
+
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.AreEqual(null, task.Exception);
+        }
+
+        [TestMethod]
+        public void ShouldNotThrowWhenIncludeServerAuthorizationIsTrueAndAuthorizationIsOtherScheme()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "sha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var body = "hello world";
+            var bodyBytes = Encoding.UTF8.GetBytes(body);
+            var ms = new MemoryStream();
+            ms.Write(bodyBytes, 0, bodyBytes.Length);
+            ms.Flush();
+            ms.Seek(0, SeekOrigin.Begin);
+
+            var logger = new Logger();
+            var builder = new AppBuilderFactory().Create();
+            builder.SetLoggerFactory(new LoggerFactory(logger));
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
+            request.SetHeader("Authorization", new[] { "OtherScheme" });
+
+            request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
+            request.Method = "post";
+            request.Body = ms;
+            request.SetHeader("Host", new string[] { "example.com" });
+            request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
+            request.ContentType = "text/plain";
+
+            var response = (OwinResponse)context.Response;
+
+            var middleware = new HawkAuthenticationMiddleware(
+                            new AppFuncTransition((env) =>
+                            {
+                                response.StatusCode = 200;
+                                return Task.FromResult<object>(null);
+                            }),
+                           builder,
+                           new HawkAuthenticationOptions
+                           {
+                               Credentials = (id) => Task.FromResult(credential),
+                               IncludeServerAuthorization = true
+                           }
+                        );
+
+            var task = middleware.Invoke(context);
+
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.AreEqual(null, task.Exception);
+        }
+        [TestMethod]
+        public void ShouldNotThrowWhenIncludeServerAuthorizationIsTrueAndAuthorizationIsEmpty()
+        {
+            var credential = new HawkCredential
+            {
+                Id = "123",
+                Algorithm = "sha256",
+                Key = "werxhqb98rpaxn39848xrunpaw3489ruxnpa98w4rxn",
+                User = "steve"
+            };
+
+            var body = "hello world";
+            var bodyBytes = Encoding.UTF8.GetBytes(body);
+            var ms = new MemoryStream();
+            ms.Write(bodyBytes, 0, bodyBytes.Length);
+            ms.Flush();
+            ms.Seek(0, SeekOrigin.Begin);
+
+            var logger = new Logger();
+            var builder = new AppBuilderFactory().Create();
+            builder.SetLoggerFactory(new LoggerFactory(logger));
+            var context = new OwinContext();
+            var request = (OwinRequest)context.Request;
+            request.SetHeader("Authorization", new[] { "" });
+
+            request.Set<Action<Action<object>, object>>("server.OnSendingHeaders", RegisterForOnSendingHeaders);
+            request.Method = "post";
+            request.Body = ms;
+            request.SetHeader("Host", new string[] { "example.com" });
+            request.SetUri(new Uri("http://example.com:8080/resource/4?filter=a"));
+            request.ContentType = "text/plain";
+
+            var response = (OwinResponse)context.Response;
+
+            var middleware = new HawkAuthenticationMiddleware(
+                            new AppFuncTransition((env) =>
+                            {
+                                response.StatusCode = 200;
+                                return Task.FromResult<object>(null);
+                            }),
+                           builder,
+                           new HawkAuthenticationOptions
+                           {
+                               Credentials = (id) => Task.FromResult(credential),
+                               IncludeServerAuthorization = true
+                           }
+                        );
+
+            var task = middleware.Invoke(context);
+
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.AreEqual(null, task.Exception);
+        }
+
+        [TestMethod]
         public void ShouldAuthenticateServer()
         {
             var credential = new HawkCredential
