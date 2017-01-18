@@ -40,7 +40,7 @@ Response: <span id="response"></span>
 
 		    $.ajax({
 		        dataType: "json",
-		        headers: { authorization: header.field },
+		        headers: { "Server-Authorization": header.field },
 		        url: url,
 		        success: function (error, response, body) {
 		            
