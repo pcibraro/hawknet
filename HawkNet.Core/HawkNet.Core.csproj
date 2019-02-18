@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <PackageId>HawkNetCore</PackageId>
+    <Version>1.0.0</Version>
+    <Author>Pablo Cibraro</Author>
+    <Company>Agilesigt</Company>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
