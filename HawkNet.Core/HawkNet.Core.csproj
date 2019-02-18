@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;CORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\HawkNet\Hawk.cs" Link="Hawk.cs" />
+    <Compile Include="..\HawkNet\HawkCredential.cs" Link="HawkCredential.cs" />
+    <Compile Include="..\HawkNet\HttpWebRequestExtensions.cs" Link="HttpWebRequestExtensions.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2048
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet", "HawkNet\HawkNet.csproj", "{F997CE59-EEE3-42E4-B41A-B32985994603}"
 EndProject
@@ -37,6 +37,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.Owin", "Example.Owin\Example.Owin.csproj", "{22B86024-3749-47FE-9C9E-31BD6ABD49F0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.Web", "Example.Web\Example.Web.csproj", "{F5CD564A-2B6F-4B38-B6B4-8009D48930CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HawkNet.Core", "HawkNet.Core\HawkNet.Core.csproj", "{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.Core", "Example.Core\Example.Core.csproj", "{79BEC64E-9BB4-408E-8507-DE8071B56375}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -129,8 +133,23 @@ Global
 		{F5CD564A-2B6F-4B38-B6B4-8009D48930CE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F5CD564A-2B6F-4B38-B6B4-8009D48930CE}.Signed|Any CPU.ActiveCfg = Release|Any CPU
 		{F5CD564A-2B6F-4B38-B6B4-8009D48930CE}.Signed|Any CPU.Build.0 = Release|Any CPU
+		{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}.Signed|Any CPU.ActiveCfg = Debug|Any CPU
+		{24D77DBB-E6F0-46C4-83D4-1E79F49973FC}.Signed|Any CPU.Build.0 = Debug|Any CPU
+		{79BEC64E-9BB4-408E-8507-DE8071B56375}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79BEC64E-9BB4-408E-8507-DE8071B56375}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79BEC64E-9BB4-408E-8507-DE8071B56375}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79BEC64E-9BB4-408E-8507-DE8071B56375}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79BEC64E-9BB4-408E-8507-DE8071B56375}.Signed|Any CPU.ActiveCfg = Debug|Any CPU
+		{79BEC64E-9BB4-408E-8507-DE8071B56375}.Signed|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04C936A8-02FD-4659-A373-397B1B1BAFD9}
 	EndGlobalSection
 EndGlobal

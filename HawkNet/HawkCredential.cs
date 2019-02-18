@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-#if NET45
+#if NET45 || CORE
 using System.Security.Claims;
 using System.Threading.Tasks;
 #endif
@@ -18,7 +18,7 @@ namespace HawkNet
         public HawkCredential()
         {
             this.User = string.Empty;
-#if !NET45
+#if !NET45 && !CORE
             this.Roles = new string[] { };
 #endif
         }
@@ -43,7 +43,7 @@ namespace HawkNet
         /// </summary>
         public string User { get; set; }
 
-#if NET45
+#if NET45 || CORE
         /// <summary>
         /// Additional Claims
         /// </summary>

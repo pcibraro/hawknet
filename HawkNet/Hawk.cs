@@ -10,7 +10,7 @@ using System.Text;
 using System.Web;
 using System.Diagnostics;
 
-#if NET45
+#if NET45 || CORE
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -38,7 +38,7 @@ namespace HawkNet
             SupportedAttributes = RequiredAttributes.Concat(OptionalAttributes).ToArray();
         }
 
-#if NET45
+#if NET45 || CORE
         /// <summary>
         /// Authenticates an upcoming request message
         /// </summary>
@@ -236,7 +236,7 @@ namespace HawkNet
                 throw new SecurityException("Bad mac");
             }
 
-#if NET45
+#if NET45 || CORE
             var userClaim = new Claim(ClaimTypes.Name, credential.User);
             var allClaims = Enumerable.Concat(new Claim[] { userClaim },
                 (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
@@ -331,7 +331,7 @@ namespace HawkNet
             return bewit;
         }
 
-#if NET45
+#if NET45 || CORE
         /// <summary>
         /// Authenticates a request message using a bewit
         /// </summary>
@@ -426,7 +426,7 @@ namespace HawkNet
                 throw new SecurityException("Bad mac");
             }
 
-#if NET45
+#if NET45 || CORE
             var userClaim = new Claim(ClaimTypes.Name, credential.User);
             var allClaims = Enumerable.Concat(new Claim[] { userClaim },
                 (credential.AdditionalClaims != null) ? credential.AdditionalClaims : Enumerable.Empty<Claim>());
@@ -634,12 +634,6 @@ namespace HawkNet
                     qs = qs.Substring(1);
                 }
             }
-
-
-       //     var parsedQueryString = HttpUtility.ParseQueryString(uri.Query);
-       //     parsedQueryString.Remove("bewit");
-
-       //     var qs = parsedQueryString.ToString();
 
             var newUri = string.Format("{0}://{1}:{2}{3}",
                 uri.Scheme,
