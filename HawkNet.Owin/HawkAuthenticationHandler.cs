@@ -64,7 +64,7 @@ namespace HawkNet.Owin
 
             if (Request.Headers.ContainsKey("authorization"))
             {
-                authorization = AuthenticationHeaderValue.Parse(Request.Headers["authorization"]);
+                AuthenticationHeaderValue.TryParse(Request.Headers["authorization"], out authorization);
             }
 
              if (authorization != null &&
@@ -153,15 +153,18 @@ namespace HawkNet.Owin
             {
                 if (this.Options.IncludeServerAuthorization)
                 {
-                    var authorization = AuthenticationHeaderValue.Parse(Request.Headers["authorization"]);
-
-                    await AuthenticateResponse(authorization.Parameter,
-                            Request.Host.Value,
-                            Request.Method,
-                            Request.Uri,
-                            Response.ContentType,
-                            this.Options.Credentials,
-                            Response);
+                    AuthenticationHeaderValue authorization;
+                    if (AuthenticationHeaderValue.TryParse(Request.Headers["authorization"], out authorization)
+                        && authorization.Scheme.Equals(HawkAuthenticationOptions.Scheme, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await AuthenticateResponse(authorization.Parameter,
+                                Request.Host.Value,
+                                Request.Method,
+                                Request.Uri,
+                                Response.ContentType,
+                                this.Options.Credentials,
+                                Response);
+                    }
                 }
             }
             else if (Response.StatusCode == 401)
